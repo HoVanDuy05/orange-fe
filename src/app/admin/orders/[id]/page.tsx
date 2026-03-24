@@ -9,9 +9,11 @@ import {
   Box, Divider, Paper, Table, ScrollArea, ActionIcon, ThemeIcon, Timeline
 } from '@mantine/core';
 import {
-  ArrowLeft, Trash2, Clock, CheckCircle2, ChefHat, PackageCheck,
-  Banknote, XCircle, ShoppingCart, MapPin, Calendar, StickyNote
-} from 'lucide-react';
+  IconArrowLeft, IconTrash, IconClock, IconCircleCheck, 
+  IconChefHat, IconPackage, IconCash, IconCircleX, 
+  IconShoppingCart, IconMapPin, IconCalendar, IconNote,
+  IconToolsKitchen2, IconHistory
+} from '@tabler/icons-react';
 import { notifications } from '@mantine/notifications';
 import { modals } from '@mantine/modals';
 import { SectionLoader } from '@/components/common/GlobalLoading';
@@ -21,15 +23,17 @@ import 'dayjs/locale/vi';
 dayjs.locale('vi');
 
 const STATUS_CONFIG: Record<string, { label: string; color: string; icon: any }> = {
-  pending:   { label: 'Chờ xác nhận', color: 'orange',  icon: Clock },
-  confirmed: { label: 'Đã xác nhận',  color: 'blue',    icon: CheckCircle2 },
-  preparing: { label: 'Đang chế biến', color: 'violet', icon: ChefHat },
-  done:      { label: 'Sẵn sàng',     color: 'cyan',    icon: PackageCheck },
-  paid:      { label: 'Đã thanh toán', color: 'green',  icon: Banknote },
-  cancelled: { label: 'Đã huỷ',       color: 'red',     icon: XCircle },
+  pending:   { label: 'Chờ xác nhận', color: 'orange',  icon: IconClock },
+  confirmed: { label: 'Đã xác nhận',  color: 'blue',    icon: IconCircleCheck },
+  preparing: { label: 'Đang chế biến', color: 'violet', icon: IconChefHat },
+  done:      { label: 'Đã ra món',    color: 'cyan',    icon: IconPackage },
+  paid:      { label: 'Đã thanh toán', color: 'green',  icon: IconCash },
+  cancelled: { label: 'Đã huỷ',       color: 'red',     icon: IconCircleX },
 };
 
 const STATUS_FLOW = ['pending', 'confirmed', 'preparing', 'done', 'paid'];
+
+const VND = (n: number) => new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(n);
 
 export default function OrderDetailPage() {
   const { id } = useParams();
@@ -47,12 +51,16 @@ export default function OrderDetailPage() {
 
   const updateStatusMutation = useMutation({
     mutationFn: (status: string) => https.patch(`/orders/${id}/status`, { status }),
-    onSuccess: () => {
+    onSuccess: (_, status) => {
       queryClient.invalidateQueries({ queryKey: ['order-detail', id] });
       queryClient.invalidateQueries({ queryKey: ['orders'] });
       queryClient.invalidateQueries({ queryKey: ['stats'] });
       queryClient.invalidateQueries({ queryKey: ['tables'] });
-      notifications.show({ title: 'Cập nhật thành công', message: 'Trạng thái đơn đã thay đổi', color: 'green' });
+      notifications.show({ 
+        title: 'Cập nhật thành công', 
+        message: `Đã chuyển sang: ${STATUS_CONFIG[status]?.label || status}`, 
+        color: 'green' 
+      });
     }
   });
 
@@ -74,7 +82,7 @@ export default function OrderDetailPage() {
   if (!order) return (
     <Stack p="xl" align="center">
       <Text c="dimmed">Không tìm thấy đơn hàng.</Text>
-      <Button onClick={() => router.back()} leftSection={<ArrowLeft size={16} />}>Quay lại</Button>
+      <Button onClick={() => router.back()} leftSection={<IconArrowLeft size={16} />}>Quay lại</Button>
     </Stack>
   );
 
@@ -85,85 +93,85 @@ export default function OrderDetailPage() {
 
   return (
     <Stack gap="xl" p="md">
-      {/* Header / Breadcrumb */}
-      <Group justify="space-between" align="flex-start">
+      {/* Header */}
+      <Group justify="space-between" align="center">
         <Group gap="md">
           <ActionIcon 
             variant="light" 
             color="blue" 
             size="xl" 
-            radius="xl"
+            radius="md"
             onClick={() => router.push('/admin/orders')}
           >
-            <ArrowLeft size={20} />
+            <IconArrowLeft size={22} />
           </ActionIcon>
           <Stack gap={2}>
-            <Text size="sm" c="dimmed" fw={500}>Quản lý Đơn hàng</Text>
+            <Text size="xs" c="dimmed" fw={700} tt="uppercase">Mã đơn #{order.id}</Text>
             <Title order={1} className="text-slate-800 text-3xl font-black">
-              Chi tiết Đơn hàng <span className="text-blue-600">#{order.id}</span>
+              Chi tiết Đơn hàng
             </Title>
           </Stack>
         </Group>
-        <Badge size="xl" color={cfg.color} variant="filled" leftSection={<StatusIcon size={14} />} radius="md">
+        <Badge size="xl" color={cfg.color} variant="filled" leftSection={<StatusIcon size={16} stroke={2.5} />} radius="md">
           {cfg.label}
         </Badge>
       </Group>
 
-      <SimpleGrid cols={{ base: 1, md: 3 }} spacing="lg">
-        {/* === CỘT TRÁI: Chi tiết đơn hàng === */}
+      <SimpleGrid cols={{ base: 1, md: 3 }} spacing="xl">
+        {/* === LEFT: ORDER DETAILS === */}
         <Box style={{ gridColumn: 'span 2' }}>
           <Stack gap="lg">
-            {/* Thông tin tóm tắt */}
+            {/* Quick Summary */}
             <SimpleGrid cols={3} spacing="md">
-              <Paper p="lg" withBorder radius="xl" className="bg-blue-50 border-blue-100 text-center">
-                <ThemeIcon color="blue" size="xl" radius="xl" mx="auto" mb="xs">
-                  <MapPin size={20} />
+              <Paper p="lg" withBorder radius="md" className="bg-blue-50/50 border-blue-100 text-center">
+                <ThemeIcon color="blue" size="xl" radius="md" mx="auto" mb="xs" variant="light">
+                  <IconMapPin size={22} />
                 </ThemeIcon>
                 <Text size="xs" fw={700} c="dimmed" tt="uppercase">Bàn số</Text>
-                <Text size="2xl" fw={900} c="blue" mt={4}>#{order.table_id}</Text>
+                <Text size="2xl" fw={900} c="blue" mt={4}>{order.table_name || `Bàn ${order.table_id}`}</Text>
               </Paper>
-              <Paper p="lg" withBorder radius="xl" className="bg-green-50 border-green-100 text-center">
-                <ThemeIcon color="green" size="xl" radius="xl" mx="auto" mb="xs">
-                  <Banknote size={20} />
+              <Paper p="lg" withBorder radius="md" className="bg-green-50/50 border-green-100 text-center">
+                <ThemeIcon color="green" size="xl" radius="md" mx="auto" mb="xs" variant="light">
+                  <IconCash size={22} />
                 </ThemeIcon>
-                <Text size="xs" fw={700} c="dimmed" tt="uppercase">Tổng tiền</Text>
-                <Text size="lg" fw={900} c="green" mt={4}>
-                  {new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(Number(order.total_amount))}
+                <Text size="xs" fw={700} c="dimmed" tt="uppercase">Tổng cộng</Text>
+                <Text size="xl" fw={900} c="green" mt={4}>
+                  {VND(Number(order.total_amount))}
                 </Text>
               </Paper>
-              <Paper p="lg" withBorder radius="xl" className="text-center">
-                <ThemeIcon color="gray" size="xl" radius="xl" mx="auto" mb="xs">
-                  <Calendar size={20} />
+              <Paper p="lg" withBorder radius="md" className="text-center bg-slate-50/50">
+                <ThemeIcon color="gray" size="xl" radius="md" mx="auto" mb="xs" variant="light">
+                  <IconCalendar size={22} />
                 </ThemeIcon>
-                <Text size="xs" fw={700} c="dimmed" tt="uppercase">Thời gian tạo</Text>
-                <Text size="sm" fw={700} mt={4}>{dayjs(order.created_at).format('HH:mm')}</Text>
+                <Text size="xs" fw={700} c="dimmed" tt="uppercase">Thời điểm đặt</Text>
+                <Text size="md" fw={700} mt={4}>{dayjs(order.created_at).format('HH:mm')}</Text>
                 <Text size="xs" c="dimmed">{dayjs(order.created_at).format('DD/MM/YYYY')}</Text>
               </Paper>
             </SimpleGrid>
 
-            {/* Ghi chú của khách */}
+            {/* Note */}
             {order.note && (
-              <Paper p="md" withBorder radius="xl" className="bg-yellow-50 border-yellow-200">
+              <Paper p="md" withBorder radius="md" className="bg-yellow-50 border-yellow-200">
                 <Group gap="xs" mb="xs">
-                  <StickyNote size={16} className="text-yellow-600" />
-                  <Text size="sm" fw={700} c="yellow.8">Ghi chú từ khách hàng</Text>
+                  <IconNote size={18} className="text-yellow-600" />
+                  <Text size="sm" fw={800} c="yellow.9">Ghi chú từ khách</Text>
                 </Group>
-                <Text size="sm" className="italic">"{order.note}"</Text>
+                <Text size="sm" className="italic text-slate-700">"{order.note}"</Text>
               </Paper>
             )}
 
-            {/* Danh sách món ăn */}
-            <Card withBorder radius="xl" padding="0" className="overflow-hidden">
-              <Box p="md" className="bg-slate-50 border-b border-slate-100">
+            {/* Item List */}
+            <Card withBorder radius="md" padding="0" className="overflow-hidden border-slate-200 shadow-sm">
+              <Box p="md" className="bg-slate-50 border-b border-slate-200">
                 <Group gap="xs">
-                  <ShoppingCart size={18} className="text-blue-600" />
-                  <Text fw={800} size="md">Danh sách món đã đặt</Text>
+                  <IconShoppingCart size={20} className="text-blue-600" stroke={2} />
+                  <Text fw={900} size="md">Các món đã gọi</Text>
                 </Group>
               </Box>
-              <Table verticalSpacing="md" horizontalSpacing="xl">
-                <Table.Thead>
+              <Table verticalSpacing="md" horizontalSpacing="xl" highlightOnHover>
+                <Table.Thead className="bg-slate-50/50">
                   <Table.Tr>
-                    <Table.Th fw={700}>Mã sản phẩm</Table.Th>
+                    <Table.Th fw={700}>Sản phẩm</Table.Th>
                     <Table.Th ta="center" fw={700}>Số lượng</Table.Th>
                     <Table.Th ta="right" fw={700}>Đơn giá</Table.Th>
                     <Table.Th ta="right" fw={700}>Thành tiền</Table.Th>
@@ -173,37 +181,42 @@ export default function OrderDetailPage() {
                   {order.items && order.items.length > 0 ? order.items.map((item: any, i: number) => (
                     <Table.Tr key={i}>
                       <Table.Td>
-                        <Text fw={700} c="blue">SP #{item.product_id}</Text>
+                        <Group gap="sm">
+                          <ThemeIcon color="blue" size="sm" variant="light" radius="sm">
+                            <IconToolsKitchen2 size={14} />
+                          </ThemeIcon>
+                          <Text fw={700} c="blue">Món #{item.product_id}</Text>
+                        </Group>
                       </Table.Td>
                       <Table.Td ta="center">
-                        <Badge variant="light" size="md">{item.quantity}</Badge>
+                        <Badge variant="light" size="lg" radius="md">{item.quantity}</Badge>
                       </Table.Td>
                       <Table.Td ta="right">
-                        <Text size="sm" c="dimmed">
-                          {new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(Number(item.unit_price))}
+                        <Text size="sm" c="dimmed" fw={600}>
+                          {VND(Number(item.unit_price))}
                         </Text>
                       </Table.Td>
                       <Table.Td ta="right">
                         <Text fw={800} c="green">
-                          {new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(Number(item.unit_price) * item.quantity)}
+                          {VND(Number(item.unit_price) * item.quantity)}
                         </Text>
                       </Table.Td>
                     </Table.Tr>
                   )) : (
                     <Table.Tr>
                       <Table.Td colSpan={4} ta="center">
-                        <Text c="dimmed" py="md">Không có thông tin chi tiết món.</Text>
+                        <Text c="dimmed" py="xl">Không có thông tin chi tiết món ăn.</Text>
                       </Table.Td>
                     </Table.Tr>
                   )}
                 </Table.Tbody>
                 {order.items && order.items.length > 0 && (
-                  <Table.Tfoot>
+                  <Table.Tfoot className="bg-slate-50 border-t border-slate-200">
                     <Table.Tr>
-                      <Table.Th colSpan={3} ta="right" fw={900}>TỔNG CỘNG</Table.Th>
+                      <Table.Th colSpan={3} ta="right" fw={900}>TỔNG TIỀN THANH TOÁN</Table.Th>
                       <Table.Th ta="right">
-                        <Text fw={900} c="green" size="lg">
-                          {new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(Number(order.total_amount))}
+                        <Text fw={900} c="green" size="xl">
+                          {VND(Number(order.total_amount))}
                         </Text>
                       </Table.Th>
                     </Table.Tr>
@@ -214,24 +227,24 @@ export default function OrderDetailPage() {
           </Stack>
         </Box>
 
-        {/* === CỘT PHẢI: Hành động & Timeline === */}
-        <Stack gap="lg">
-          {/* Hành động */}
-          <Card withBorder radius="xl" p="lg">
-            <Text fw={800} mb="md" size="sm" tt="uppercase" c="dimmed">Cập nhật trạng thái</Text>
-            <Stack gap="sm">
+        {/* === RIGHT: ACTIONS & TIMELINE === */}
+        <Stack gap="xl">
+          {/* Main Actions */}
+          <Card withBorder radius="md" p="lg" className="border-slate-200 shadow-sm">
+            <Text fw={900} mb="lg" size="xs" tt="uppercase" c="dimmed" style={{ letterSpacing: '1px' }}>Thao tác Admin</Text>
+            <Stack gap="md">
               {nextStatus && nextCfg && (
                 <Button
                   fullWidth
                   color={nextCfg.color}
                   size="md"
                   radius="md"
-                  leftSection={<nextCfg.icon size={18} />}
+                  leftSection={<nextCfg.icon size={20} stroke={2} />}
                   loading={updateStatusMutation.isPending}
                   onClick={() => updateStatusMutation.mutate(nextStatus)}
-                  className="shadow-sm"
+                  className="shadow-md"
                 >
-                  Chuyển → {nextCfg.label}
+                  Xác nhận: {nextCfg.label}
                 </Button>
               )}
               {order.order_status !== 'cancelled' && order.order_status !== 'paid' && (
@@ -239,14 +252,14 @@ export default function OrderDetailPage() {
                   fullWidth
                   color="red"
                   variant="light"
-                  size="md"
+                  size="sm"
                   radius="md"
-                  leftSection={<XCircle size={18} />}
+                  leftSection={<IconCircleX size={18} />}
                   loading={updateStatusMutation.isPending}
                   onClick={() => modals.openConfirmModal({
                     title: 'Huỷ đơn hàng',
-                    children: <Text size="sm">Bạn có chắc muốn huỷ đơn hàng #{order.id}?</Text>,
-                    labels: { confirm: 'Huỷ đơn', cancel: 'Không' },
+                    children: <Text size="sm">Bạn có chắc muốn huỷ đơn hàng #{order.id}? Khách sẽ không thể thanh toán đơn này.</Text>,
+                    labels: { confirm: 'Đồng ý Huỷ', cancel: 'Bỏ qua' },
                     confirmProps: { color: 'red' },
                     onConfirm: () => updateStatusMutation.mutate('cancelled')
                   })}
@@ -257,39 +270,48 @@ export default function OrderDetailPage() {
             </Stack>
           </Card>
 
-          {/* Timeline trạng thái */}
-          <Card withBorder radius="xl" p="lg">
-            <Text fw={800} mb="lg" size="sm" tt="uppercase" c="dimmed">Lộ trình xử lý</Text>
-            <Timeline active={STATUS_FLOW.indexOf(order.order_status)} bulletSize={28} lineWidth={2}>
+          {/* Processing Timeline */}
+          <Card withBorder radius="md" p="lg" className="border-slate-200 shadow-sm bg-slate-50/30">
+            <Group justify="space-between" mb="xl">
+              <Text fw={900} size="xs" tt="uppercase" c="dimmed" style={{ letterSpacing: '1px' }}>Tiến độ đơn hàng</Text>
+              <IconHistory size={16} className="text-slate-400" />
+            </Group>
+            <Timeline active={STATUS_FLOW.indexOf(order.order_status)} bulletSize={32} lineWidth={2}>
               {STATUS_FLOW.map((s) => {
                 const c = STATUS_CONFIG[s];
                 const Icon = c.icon;
+                const isPassed = STATUS_FLOW.indexOf(order.order_status) >= STATUS_FLOW.indexOf(s);
                 return (
                   <Timeline.Item
                     key={s}
-                    bullet={<Icon size={14} />}
-                    title={<Text size="sm" fw={700}>{c.label}</Text>}
-                    color={c.color}
-                  />
+                    bullet={<Icon size={16} stroke={isPassed ? 3 : 1.5} />}
+                    title={<Text size="sm" fw={isPassed ? 800 : 600} c={isPassed ? 'dark' : 'dimmed'}>{c.label}</Text>}
+                    color={isPassed ? c.color : 'gray'}
+                  >
+                    {order.order_status === s && (
+                      <Badge size="xs" variant="light" color={c.color} mt={4}>Hiện tại</Badge>
+                    )}
+                  </Timeline.Item>
                 );
               })}
             </Timeline>
           </Card>
 
-          {/* Xoá đơn */}
+          {/* Delete (Danger Zone) */}
           <Button
             variant="subtle"
             color="red"
-            leftSection={<Trash2 size={16} />}
+            size="xs"
+            leftSection={<IconTrash size={14} />}
             onClick={() => modals.openConfirmModal({
               title: 'Xoá vĩnh viễn đơn hàng',
-              children: <Text size="sm">Hành động này không thể khôi phục. Đơn hàng #{order.id} sẽ bị xóa hoàn toàn.</Text>,
+              children: <Text size="sm">Hành động này sẽ xóa sạch dữ liệu đơn #{order.id} khỏi hệ thống. Bạn có chắc không?</Text>,
               labels: { confirm: 'Xoá vĩnh viễn', cancel: 'Hủy' },
               confirmProps: { color: 'red' },
               onConfirm: () => deleteMutation.mutate()
             })}
           >
-            Xoá đơn hàng này
+            Xoá vĩnh viễn đơn
           </Button>
         </Stack>
       </SimpleGrid>

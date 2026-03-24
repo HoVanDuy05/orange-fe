@@ -6,8 +6,8 @@ import { QueryEndpointMap } from '../api/endpoints';
 
 export function useAppQuery<K extends keyof ApiQueryType>(
   key: K,
-  queryParams?: ApiQueryType[K]['url'] extends { queryParams: infer P } ? P : undefined,
-  urlParams?: ApiQueryType[K]['url'] extends { urlParams: infer UP } ? UP : undefined,
+  queryParams?: 'queryParams' extends keyof ApiQueryType[K]['url'] ? ApiQueryType[K]['url']['queryParams'] : undefined,
+  urlParams?: 'urlParams' extends keyof ApiQueryType[K]['url'] ? ApiQueryType[K]['url']['urlParams'] : undefined,
   options?: Omit<UseQueryOptions<ApiQueryType[K]['response'], Error>, 'queryKey' | 'queryFn'>
 ) {
   const queryKey: QueryKey = [key, queryParams, urlParams];

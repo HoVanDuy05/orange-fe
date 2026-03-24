@@ -28,7 +28,7 @@ export default function MenuPage() {
   // Fetch data with custom query hooks we made earlier
   const { data: categories, isLoading: loadingCats } = useAppQuery('getCategories');
   const { data: products, isLoading: loadingProds } = useAppQuery('getProducts', { 
-    categoryId: activeCategory || undefined 
+    categoryId: activeCategory === 'all' ? undefined : (activeCategory || undefined)
   });
 
   if (loadingCats || loadingProds) return <Center h="80vh"><Loader /></Center>;
