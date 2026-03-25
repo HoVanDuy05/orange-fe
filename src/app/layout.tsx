@@ -42,8 +42,9 @@ export default function RootLayout({
     <html lang="vi" className={beVietnam.className} suppressHydrationWarning>
       <head>
         <ColorSchemeScript forceColorScheme="light" />
+        <meta name="viewport" content="width=device-width, initial-scale=1" />
       </head>
-      <body>
+      <body suppressHydrationWarning>
         <QueryProvider>
           <MantineProvider theme={theme} defaultColorScheme="light">
             <Notifications position="top-right" zIndex={2000} />

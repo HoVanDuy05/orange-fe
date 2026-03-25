@@ -1,14 +1,14 @@
 'use client';
 
-import { 
-  Container, 
-  SimpleGrid, 
-  Card, 
-  Image, 
-  Text, 
-  Badge, 
-  Button, 
-  Group, 
+import {
+  Container,
+  SimpleGrid,
+  Card,
+  Image,
+  Text,
+  Badge,
+  Button,
+  Group,
   Tabs,
   Title,
   Loader,
@@ -24,10 +24,10 @@ import { useState } from 'react';
 
 export default function MenuPage() {
   const [activeCategory, setActiveCategory] = useState<string | null>(null);
-  
+
   // Fetch data with custom query hooks we made earlier
   const { data: categories, isLoading: loadingCats } = useAppQuery('getCategories');
-  const { data: products, isLoading: loadingProds } = useAppQuery('getProducts', { 
+  const { data: products, isLoading: loadingProds } = useAppQuery('getProducts', {
     categoryId: activeCategory === 'all' ? undefined : (activeCategory || undefined)
   });
 
@@ -56,8 +56,8 @@ export default function MenuPage() {
 
         <SimpleGrid cols={{ base: 1, sm: 2, md: 3, lg: 4 }} spacing="lg">
           {products?.data?.map((prod: any) => (
-            <Card key={prod.id} shadow="sm" padding="lg" radius="md" withBorder style={{ 
-              backgroundColor: '#1A1B1E', 
+            <Card key={prod.id} shadow="sm" padding="lg" radius="md" withBorder style={{
+              backgroundColor: '#1A1B1E',
               borderColor: '#373A40',
               display: 'flex',
               flexDirection: 'column'
@@ -89,12 +89,12 @@ export default function MenuPage() {
                     {formatCurrency(Number(prod.price))}
                   </Text>
 
-                  <Button 
-                    fullWidth 
-                    variant="light" 
-                    color="blue" 
-                    mt="md" 
-                    radius="md" 
+                  <Button
+                    fullWidth
+                    variant="light"
+                    color="blue"
+                    mt="md"
+                    radius="md"
                     leftSection={<ShoppingCart size={18} />}
                   >
                     Thêm vào giỏ

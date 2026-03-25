@@ -5,9 +5,10 @@ import { useQuery } from '@tanstack/react-query';
 import https from '@/api/https';
 import {
   Title, Card, Text, Badge, Stack, Group, Button,
-  Timeline, ScrollArea, Center, ActionIcon, Paper, SimpleGrid, Breadcrumbs, Anchor, Box, Divider
+  Timeline, ScrollArea, Center, ActionIcon, Paper, SimpleGrid, Breadcrumbs, Box, Divider
 } from '@mantine/core';
 import { useParams, useRouter } from 'next/navigation';
+import Link from 'next/link';
 import { FileText, CheckCircle2, ArrowLeft, History, Calendar, User, Package, DollarSign, Box as BoxIcon } from 'lucide-react';
 import { SectionLoader } from '@/components/common/GlobalLoading';
 import dayjs from 'dayjs';
@@ -44,8 +45,8 @@ export default function StockHistoryPage() {
       {/* Breadcrumbs & Navigation */}
       <Stack gap={2}>
         <Breadcrumbs>
-          <Anchor href="/admin" size="sm" c="dimmed">Dashboard</Anchor>
-          <Anchor href="/admin/stock" size="sm" c="dimmed">Quản lý Kho</Anchor>
+          <Link href="/admin"><Text size="sm" c="dimmed" style={{ cursor: 'pointer' }}>Dashboard</Text></Link>
+          <Link href="/admin/stock"><Text size="sm" c="dimmed" style={{ cursor: 'pointer' }}>Quản lý Kho</Text></Link>
           <Text size="sm" c="blue" fw={700}>Nhật ký chỉnh sửa</Text>
         </Breadcrumbs>
         <Group justify="space-between" mt="xs">

@@ -12,7 +12,7 @@ import {
   IconArrowLeft, IconTrash, IconClock, IconCircleCheck, 
   IconChefHat, IconPackage, IconCash, IconCircleX, 
   IconShoppingCart, IconMapPin, IconCalendar, IconNote,
-  IconToolsKitchen2, IconHistory
+  IconToolsKitchen2, IconHistory, IconUser, IconPhone
 } from '@tabler/icons-react';
 import { notifications } from '@mantine/notifications';
 import { modals } from '@mantine/modals';
@@ -50,8 +50,9 @@ export default function OrderDetailPage() {
   });
 
   const updateStatusMutation = useMutation({
-    mutationFn: (status: string) => https.patch(`/orders/${id}/status`, { status }),
-    onSuccess: (_, status) => {
+    mutationFn: ({ status, payment_method }: { status: string; payment_method?: string }) => 
+      https.patch(`/orders/${id}/status`, { status, payment_method }),
+    onSuccess: (_, { status }) => {
       queryClient.invalidateQueries({ queryKey: ['order-detail', id] });
       queryClient.invalidateQueries({ queryKey: ['orders'] });
       queryClient.invalidateQueries({ queryKey: ['stats'] });
@@ -121,6 +122,31 @@ export default function OrderDetailPage() {
         {/* === LEFT: ORDER DETAILS === */}
         <Box style={{ gridColumn: 'span 2' }}>
           <Stack gap="lg">
+            {/* Customer Information */}
+            <Paper p="lg" withBorder radius="md" className="bg-white border-slate-200 shadow-sm relative overflow-hidden">
+               <Box className="absolute top-0 right-0 w-24 h-24 bg-blue-50/50 rounded-full -mr-10 -mt-10 blur-xl" />
+               <Group justify="space-between" align="center">
+                 <Group gap="md">
+                   <ThemeIcon size={48} radius="xl" color="blue" variant="light">
+                     <IconUser size={24} />
+                   </ThemeIcon>
+                   <Stack gap={0}>
+                     <Text size="xs" fw={700} c="dimmed" tt="uppercase">Khách hàng</Text>
+                     <Title order={3} fw={900} c="blue.8">{order.customer_name || 'Khách vãng lai'}</Title>
+                   </Stack>
+                 </Group>
+                 <Group gap="md">
+                   <ThemeIcon size={40} radius="xl" color="green" variant="light">
+                     <IconPhone size={20} />
+                   </ThemeIcon>
+                   <Stack gap={0}>
+                     <Text size="xs" fw={700} c="dimmed" tt="uppercase">Số điện thoại</Text>
+                     <Text fw={800} size="md" c="green.8">{order.customer_phone || '---'}</Text>
+                   </Stack>
+                 </Group>
+               </Group>
+             </Paper>
+
             {/* Quick Summary */}
             <SimpleGrid cols={3} spacing="md">
               <Paper p="lg" withBorder radius="md" className="bg-blue-50/50 border-blue-100 text-center">
@@ -241,7 +267,51 @@ export default function OrderDetailPage() {
                   radius="md"
                   leftSection={<nextCfg.icon size={20} stroke={2} />}
                   loading={updateStatusMutation.isPending}
-                  onClick={() => updateStatusMutation.mutate(nextStatus)}
+                  onClick={() => {
+                    if (nextStatus === 'paid') {
+                      modals.open({
+                        title: 'Hoàn tất thanh toán',
+                        radius: 'md',
+                        children: (
+                          <Stack gap="md" p="md">
+                            <Text size="sm">Vui lòng chọn phương thức thanh toán cho đơn hàng #{order.id}:</Text>
+                            <SimpleGrid cols={2} spacing="md">
+                              <Button 
+                                variant="light" 
+                                color="blue" 
+                                h={80} 
+                                onClick={() => {
+                                  updateStatusMutation.mutate({ status: 'paid', payment_method: 'transfer' });
+                                  modals.closeAll();
+                                }}
+                              >
+                                <Stack align="center" gap={4}>
+                                  <IconHistory size={24} />
+                                  <Text size="xs" fw={700}>Chuyển khoản</Text>
+                                </Stack>
+                              </Button>
+                              <Button 
+                                variant="light" 
+                                color="green" 
+                                h={80} 
+                                onClick={() => {
+                                  updateStatusMutation.mutate({ status: 'paid', payment_method: 'cash' });
+                                  modals.closeAll();
+                                }}
+                              >
+                                <Stack align="center" gap={4}>
+                                  <IconCash size={24} />
+                                  <Text size="xs" fw={700}>Tiền mặt</Text>
+                                </Stack>
+                              </Button>
+                            </SimpleGrid>
+                          </Stack>
+                        )
+                      });
+                    } else {
+                      updateStatusMutation.mutate({ status: nextStatus });
+                    }
+                  }}
                   className="shadow-md"
                 >
                   Xác nhận: {nextCfg.label}
@@ -261,7 +331,7 @@ export default function OrderDetailPage() {
                     children: <Text size="sm">Bạn có chắc muốn huỷ đơn hàng #{order.id}? Khách sẽ không thể thanh toán đơn này.</Text>,
                     labels: { confirm: 'Đồng ý Huỷ', cancel: 'Bỏ qua' },
                     confirmProps: { color: 'red' },
-                    onConfirm: () => updateStatusMutation.mutate('cancelled')
+                    onConfirm: () => updateStatusMutation.mutate({ status: 'cancelled' })
                   })}
                 >
                   Huỷ đơn hàng
@@ -289,7 +359,12 @@ export default function OrderDetailPage() {
                     color={isPassed ? c.color : 'gray'}
                   >
                     {order.order_status === s && (
-                      <Badge size="xs" variant="light" color={c.color} mt={4}>Hiện tại</Badge>
+                      <Badge size="xs" variant="light" color={c.color} mt={4} mb={2}>Hiện tại</Badge>
+                    )}
+                    {s === 'paid' && isPassed && order.payment_method && order.payment_method !== 'unpaid' && (
+                      <Text size="xs" fw={700} c="dimmed" mt={4}>
+                        {order.payment_method === 'cash' ? 'Bằng tiền mặt' : 'Bằng chuyển khoản'}
+                      </Text>
                     )}
                   </Timeline.Item>
                 );

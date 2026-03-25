@@ -5,6 +5,7 @@ import { useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/api/supabaseClient';
 import { notifications } from '@mantine/notifications';
 import { BellRing, CheckCircle2, ShoppingCart } from 'lucide-react';
+import { useRouter } from 'next/navigation';
 import React from 'react';
 
 /**
@@ -13,6 +14,7 @@ import React from 'react';
  */
 export const useRealtime = () => {
   const queryClient = useQueryClient();
+  const router = useRouter();
 
   useEffect(() => {
     console.log('--- ĐANG KHỞI TẠO REAL-TIME UPDATE ---');
@@ -33,12 +35,15 @@ export const useRealtime = () => {
           } catch(e) {}
 
           notifications.show({
-            title: 'ĐƠN HÀNG MỚI!',
-            message: `Bàn số ${payload.new.table_id} vừa đặt món mới!`,
+            title: '🔔 ĐƠN HÀNG MỚI!',
+            message: `Khách hàng: ${payload.new.customer_name || 'Khách vãng lai'} vừa đặt món mới! Nhấn để xem chi tiết.`,
             color: 'blue',
             icon: <BellRing size={20} />,
             autoClose: 10000,
-            className: 'border-2 border-blue-500 shadow-xl'
+            className: 'border-2 border-blue-500 shadow-xl cursor-pointer',
+            onClick: () => {
+              router.push(`/admin/orders/${payload.new.id}`);
+            }
           });
 
           // Làm mới dữ liệu liên quan

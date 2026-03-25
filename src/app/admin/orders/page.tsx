@@ -1,9 +1,10 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useRouter } from 'next/navigation';
 import https from '@/api/https';
+import { supabase } from '@/lib/supabase';
 import {
   Title, Card, Text, Badge, Stack, Group, Button,
   Box, Tabs, Paper, Table, ScrollArea, ActionIcon
@@ -12,7 +13,8 @@ import {
   IconShoppingCart, IconEye, IconClock, IconCircleCheck,
   IconChefHat, IconCash, IconCircleX,
   IconToolsKitchen2,
-  IconPackage
+  IconPackage,
+  IconBuildingBank
 } from '@tabler/icons-react';
 import { notifications } from '@mantine/notifications';
 import { SectionLoader } from '@/components/common/GlobalLoading';
@@ -40,7 +42,7 @@ export default function OrdersPage() {
       const res = await https.get('/orders');
       return Array.isArray(res.data) ? res.data : (res.data?.data || []);
     },
-    refetchInterval: 15000,
+    refetchInterval: 30000,
   });
 
   const orders: any[] = Array.isArray(rawData) ? rawData : [];
@@ -62,6 +64,10 @@ export default function OrdersPage() {
     : orders;
 
   const pendingCount = orders.filter(o => o.order_status === 'pending').length;
+
+  const todayOrders = orders.filter((o) => dayjs(o.created_at).isSame(dayjs(), 'day') && o.order_status === 'paid');
+  const cashRevenue = todayOrders.filter(o => o.payment_method === 'cash').reduce((sum, o) => sum + Number(o.total_amount), 0);
+  const transferRevenue = todayOrders.filter(o => o.payment_method === 'transfer').reduce((sum, o) => sum + Number(o.total_amount), 0);
 
   if (isLoading) return <SectionLoader />;
 
@@ -89,6 +95,33 @@ export default function OrdersPage() {
             </Paper>
           )}
         </Group>
+      </Group>
+
+      {/* Daily Revenue Summary Cards */}
+      <Group grow>
+        <Card withBorder radius="md" p="md" className="bg-green-50/50 border-green-100 shadow-sm">
+          <Group justify="space-between" align="center">
+            <Stack gap={0}>
+              <Text fw={800} size="xs" tt="uppercase" c="dimmed" lts="1px">Doanh thu Tiền mặt (Hôm nay)</Text>
+              <Text fw={900} size="xl" c="green.8" mt={4}>{VND(cashRevenue)}</Text>
+            </Stack>
+            <Box className="p-3 bg-green-100 rounded-full">
+              <IconCash size={24} className="text-green-600" />
+            </Box>
+          </Group>
+        </Card>
+
+        <Card withBorder radius="md" p="md" className="bg-blue-50/50 border-blue-100 shadow-sm">
+          <Group justify="space-between" align="center">
+            <Stack gap={0}>
+              <Text fw={800} size="xs" tt="uppercase" c="dimmed" lts="1px">Doanh thu Chuyển khoản (Hôm nay)</Text>
+              <Text fw={900} size="xl" c="blue.8" mt={4}>{VND(transferRevenue)}</Text>
+            </Stack>
+            <Box className="p-3 bg-blue-100 rounded-full">
+              <IconBuildingBank size={24} className="text-blue-600" />
+            </Box>
+          </Group>
+        </Card>
       </Group>
 
       {/* Tabs lọc */}
@@ -194,16 +227,16 @@ export default function OrdersPage() {
                             </Button>
                           )}
 
-                          {/* Nút Xem chi tiết với ActionIcon để tiết kiệm không gian */}
-                          <ActionIcon
+                          {/* Nút Xem chi tiết với text */}
+                          <Button
                             variant="subtle"
                             color="blue"
-                            size="md"
-                            title="Xem chi tiết"
+                            size="xs"
+                            leftSection={<IconEye size={14} stroke={1.5} />}
                             onClick={() => router.push(`/admin/orders/${order.id}`)}
                           >
-                            <IconEye size={18} stroke={1.5} />
-                          </ActionIcon>
+                            Chi tiết
+                          </Button>
                         </Group>
                       </Table.Td>
                     </Table.Tr>
