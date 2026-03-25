@@ -61,7 +61,7 @@ export default function AdminNav({ children }: { children: React.ReactNode }) {
         <Group h="100%" px="md" justify="space-between">
           <Group>
             <Burger opened={opened} onClick={toggle} hiddenFrom="sm" size="sm" />
-            <Title order={3} className="text-blue-600 font-bold">🍽️ IUH Restaurant</Title>
+            <img src="/logo-iuh.png" alt="IUH Logo" className="h-[45px] w-auto object-contain" />
           </Group>
           <UnstyledButton onClick={() => router.push('/admin/profile')}>
             <Group gap="xs">
