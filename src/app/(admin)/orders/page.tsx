@@ -12,7 +12,7 @@ import {
 import { useDisclosure } from '@mantine/hooks';
 import {
   IconShoppingCart, IconEye, IconClock, IconCircleCheck,
-  IconChefHat, IconCash, IconCircleX,
+  IconCash, IconCircleX,
   IconToolsKitchen2,
   IconPackage,
   IconBuildingBank,
@@ -23,11 +23,10 @@ import { SectionLoader } from '@/components/common/GlobalLoading';
 import dayjs from 'dayjs';
 
 const STATUS_CONFIG: Record<string, { label: string; color: string; icon: any }> = {
-  pending: { label: 'Chờ xác nhận', color: 'orange', icon: IconClock },
+  pending: { label: 'Chờ thanh toán', color: 'orange', icon: IconClock },
   confirmed: { label: 'Đã xác nhận', color: 'blue', icon: IconCircleCheck },
-  preparing: { label: 'Đang chế biến', color: 'violet', icon: IconChefHat },
-  done: { label: 'Đã ra món', color: 'cyan', icon: IconPackage },
   paid: { label: 'Đã thanh toán', color: 'green', icon: IconCash },
+  done: { label: 'Đã ra món', color: 'cyan', icon: IconPackage },
   cancelled: { label: 'Đã huỷ', color: 'red', icon: IconCircleX },
 };
 
@@ -132,7 +131,7 @@ export default function OrdersPage() {
   const todayOrders = orders.filter((o) => {
     const d = o.updated_at || o.created_at;
     if (!d) return false;
-    return dayjs(d).isSame(dayjs(), 'day') && o.order_status === 'paid';
+    return dayjs(d).isSame(dayjs(), 'day') && o.order_status === 'done';
   });
   const cashRevenue = todayOrders.filter(o => o.payment_method === 'cash').reduce((sum, o) => sum + (Number(o.total_amount) || 0), 0);
   const transferRevenue = todayOrders.filter(o => o.payment_method === 'transfer').reduce((sum, o) => sum + (Number(o.total_amount) || 0), 0);
@@ -234,10 +233,11 @@ export default function OrdersPage() {
                   const StatusIcon = cfg.icon;
                   const isPaid = order?.order_status === 'paid';
                   const isCancelled = order?.order_status === 'cancelled';
-                  const isActive = !isPaid && !isCancelled;
+                  const isDone = order?.order_status === 'done';
+                  const isActive = !isDone && !isCancelled;
 
                   return (
-                    <Table.Tr key={order.id} className={isPaid || isCancelled ? 'opacity-60 bg-slate-50' : ''}>
+                    <Table.Tr key={order.id} className={isDone || isCancelled ? 'opacity-60 bg-slate-50' : ''}>
                       <Table.Td ta="center">
                         <Text fw={800} c="blue">#{order.id}</Text>
                       </Table.Td>
@@ -291,6 +291,19 @@ export default function OrdersPage() {
                       </Table.Td>
                       <Table.Td>
                         <Group gap="xs" justify="center">
+                          {isActive && order.order_status === 'pending' && (
+                            <Button
+                              size="xs"
+                              variant="light"
+                              color="blue"
+                              leftSection={<IconCircleCheck size={14} stroke={2} />}
+                              loading={updateStatus.isPending}
+                              onClick={() => updateStatus.mutate({ id: order.id, status: 'confirmed' })}
+                            >
+                              Xác nhận
+                            </Button>
+                          )}
+
                           {isActive && order.order_status !== 'done' && (
                             <Button
                               size="xs"
@@ -304,7 +317,8 @@ export default function OrdersPage() {
                             </Button>
                           )}
 
-                          {isActive && (
+
+                          {isActive && order.order_status !== 'paid' && (
                             <Button
                               size="xs"
                               variant="filled"

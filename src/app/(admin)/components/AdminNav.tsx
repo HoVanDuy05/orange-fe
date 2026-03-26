@@ -45,80 +45,43 @@ export default function AdminNav({ children }: { children: React.ReactNode }) {
   const realtime = useRealtime();
   const [isClient, setIsClient] = useState(false);
 
-  // Global Audio/TTS Notification Logic
+  // Global Audio/TTS Notification Logic (Controlled via useRealtime and localStorage)
   const [soundEnabled, setSoundEnabled] = useState(true);
-  const prevOrdersCount = React.useRef<number>(0);
 
-  const { data: rawOrders } = useQuery({
-    queryKey: ['orders-global'],
-    queryFn: async () => {
-      try {
-        const res = await https.get('/orders');
-        return Array.isArray(res.data) ? res.data : (res.data?.data || []);
-      } catch { return []; }
-    },
-    refetchInterval: 15000,
-    enabled: !!user,
-  });
-
-  const speak = (text: string) => {
-    if ('speechSynthesis' in window && soundEnabled) {
-      window.speechSynthesis.cancel();
-      const utterance = new SpeechSynthesisUtterance(text);
-      
-      const trySpeak = () => {
-        const voices = window.speechSynthesis.getVoices();
-        // Lọc tìm giọng đọc Tiếng Việt chuẩn nhất (ưu tiên Google/Microsoft)
-        let viVoice = voices.find(v => v.lang.includes('vi-VN') && (v.name.includes('Google') || v.name.includes('Microsoft'))) ||
-                      voices.find(v => v.lang.includes('vi-VN')) ||
-                      voices.find(v => v.lang.toLowerCase().startsWith('vi'));
-        
-        if (viVoice) {
-          utterance.voice = viVoice;
-          console.log('✅ Admin Voice:', viVoice.name);
-        }
-        utterance.lang = 'vi-VN';
-        utterance.rate = 0.9;
-        utterance.pitch = 1.0;
-        window.speechSynthesis.speak(utterance);
-      };
-
-      if (window.speechSynthesis.getVoices().length > 0) {
-        trySpeak();
-      } else {
-        window.speechSynthesis.onvoiceschanged = trySpeak;
-      }
-    }
-  };
-
-  useEffect(() => {
-    if (rawOrders && rawOrders.length > prevOrdersCount.current) {
-      if (prevOrdersCount.current > 0 && soundEnabled) {
-        // Play notification sound
-        const audio = new Audio('https://assets.mixkit.co/sfx/preview/mixkit-software-interface-start-2574.mp3');
-        audio.play().catch(() => {});
-
-        // Notification popup
-        const latestOrder = rawOrders[0];
-        const tableName = latestOrder?.table_name || 'Mang đi';
-        notifications.show({
-          title: '🔔 CÓ ĐƠN HÀNG MỚI!',
-          message: `Một đơn hàng vừa được gửi đến từ: ${tableName}`,
-          color: 'blue',
-          autoClose: 10000,
-          position: 'top-right'
-        });
-
-        // TTS Read Aloud
-        speak(`Có đơn hàng mới từ ${tableName === 'Mang đi' ? 'đơn mang đi' : tableName}`);
-      }
-      prevOrdersCount.current = rawOrders.length;
-    }
-  }, [rawOrders, soundEnabled]);
-
+  // 🔑 GIẢI PHÁP: Tự động "mở khoá" âm thanh khi người dùng click bất cứ đâu
   useEffect(() => {
     setIsClient(true);
+    const isMuted = localStorage.getItem('admin_muted') === 'true';
+    setSoundEnabled(!isMuted);
+
+    const unlockAudio = () => {
+       // Tạo và Resume AudioContext rỗng để trình duyệt cho phép phát âm thanh từ sau đó
+       const audioCtx = new (window.AudioContext || (window as any).webkitAudioContext)();
+       if (audioCtx.state === 'suspended') audioCtx.resume();
+       
+       // Play một tiếng bíp cực nhỏ (0.01s) để kích hoạt Audio
+       const audio = new Audio('data:audio/wav;base64,UklGRigAAABXQVZFZm10IBAAAAABAAEARKwAAIhYAQACABAAZGF0YQQAAAD//w==');
+       audio.play().catch(() => {});
+
+       console.log('🔊 Đã mở khoá âm thanh cho hệ thống.');
+       window.removeEventListener('click', unlockAudio);
+    };
+
+    window.addEventListener('click', unlockAudio);
+    return () => window.removeEventListener('click', unlockAudio);
   }, []);
+
+  const toggleSound = () => {
+    const newVal = !soundEnabled;
+    setSoundEnabled(newVal);
+    localStorage.setItem('admin_muted', (!newVal).toString());
+    notifications.show({
+      title: newVal ? 'Bật âm báo' : 'Tắt âm báo',
+      message: newVal ? 'Hệ thống sẽ phát âm thanh khi có đơn mới.' : 'Hệ thống sẽ im lặng.',
+      color: newVal ? 'blue' : 'gray',
+      autoClose: 2000
+    });
+  };
 
   useEffect(() => {
     if (!isLoading && !user && isClient) {
@@ -149,15 +112,36 @@ export default function AdminNav({ children }: { children: React.ReactNode }) {
             <Burger opened={opened} onClick={toggle} hiddenFrom="sm" size="sm" />
             <img src="/logo-iuh.png" alt="IUH Logo" className="h-[45px] w-auto object-contain" />
           </Group>
-          <Group gap="sm">
-            <UnstyledButton 
-              onClick={() => setSoundEnabled(!soundEnabled)}
+          <Group gap="xs">
+            <UnstyledButton
+              onClick={() => {
+                const audio = new Audio('https://assets.mixkit.co/sfx/preview/mixkit-software-interface-start-2574.mp3');
+                audio.play().catch(() => { });
+                if ('speechSynthesis' in window) {
+                  window.speechSynthesis.cancel();
+                  const utterance = new SpeechSynthesisUtterance('Kiểm tra âm thanh thành công. Hệ thống đã sẵn sàng.');
+                  const voices = window.speechSynthesis.getVoices();
+                  const viVoice = voices.find(v => v.lang.includes('vi-VN')) || voices.find(v => v.lang.toLowerCase().startsWith('vi'));
+                  if (viVoice) utterance.voice = viVoice;
+                  utterance.lang = 'vi-VN';
+                  window.speechSynthesis.speak(utterance);
+                }
+                notifications.show({ title: 'Loa thông báo', message: 'Âm thanh kiểm tra đã phát.', color: 'blue' });
+              }}
+              className="p-2 rounded-full hover:bg-blue-50 text-blue-500 transition-colors"
+              title="Thử âm thanh"
+            >
+              <ConciergeBell size={20} />
+            </UnstyledButton>
+
+            <UnstyledButton
+              onClick={toggleSound}
               className={`p-2 rounded-full transition-colors ${soundEnabled ? 'hover:bg-blue-50 text-blue-600' : 'hover:bg-slate-50 text-slate-400'}`}
               title={soundEnabled ? 'Chuông báo: Bật' : 'Chuông báo: Tắt'}
             >
               {soundEnabled ? <IconVolume size={20} /> : <IconVolumeOff size={20} />}
             </UnstyledButton>
-            
+
             <UnstyledButton onClick={() => router.push('/profile')}>
               <Group gap="xs">
                 <Avatar radius="xl" color="blue" />

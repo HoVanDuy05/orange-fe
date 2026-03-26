@@ -10,7 +10,7 @@ import {
 } from '@mantine/core';
 import {
   IconArrowLeft, IconTrash, IconClock, IconCircleCheck,
-  IconChefHat, IconPackage, IconCash, IconCircleX,
+  IconPackage, IconCash, IconCircleX,
   IconShoppingCart, IconMapPin, IconCalendar, IconNote,
   IconToolsKitchen2, IconHistory, IconUser, IconPhone, IconAlertTriangle,
   IconBuildingBank
@@ -24,15 +24,14 @@ import 'dayjs/locale/vi';
 dayjs.locale('vi');
 
 const STATUS_CONFIG: Record<string, { label: string; color: string; icon: any }> = {
-  pending: { label: 'Chờ xác nhận', color: 'orange', icon: IconClock },
+  pending: { label: 'Chờ thanh toán', color: 'orange', icon: IconClock },
   confirmed: { label: 'Đã xác nhận', color: 'blue', icon: IconCircleCheck },
-  preparing: { label: 'Đang chế biến', color: 'violet', icon: IconChefHat },
-  done: { label: 'Đã ra món', color: 'cyan', icon: IconPackage },
-  paid: { label: 'Đã thanh toán', color: 'green', icon: IconCash },
+  paid: { label: 'Đã thanh toán', color: 'teal', icon: IconCash },
+  done: { label: 'Đã ra món', color: 'green', icon: IconPackage },
   cancelled: { label: 'Đã huỷ', color: 'red', icon: IconCircleX },
 };
 
-const STATUS_FLOW = ['pending', 'confirmed', 'preparing', 'done', 'paid'];
+const STATUS_FLOW = ['pending', 'confirmed', 'paid', 'done'];
 
 const VND = (n: number) => new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(n);
 

@@ -7,6 +7,7 @@ import { notifications } from '@mantine/notifications';
 import { BellRing, CheckCircle2, ShoppingCart } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import React from 'react';
+import https from '@/api/https';
 
 /**
  * Hook lắng nghe thay đổi thời gian thực từ Supabase
@@ -17,119 +18,123 @@ export const useRealtime = () => {
   const router = useRouter();
 
   useEffect(() => {
-    console.log('--- ĐANG KHỞI TẠO REAL-TIME UPDATE ---');
+    console.log('🏁 useRealtime Initialized');
 
-    // Helper: TTS Đọc tiếng Việt
-    const speak = (text: string) => {
-      if ('speechSynthesis' in window) {
-        window.speechSynthesis.cancel();
-        const utterance = new SpeechSynthesisUtterance(text);
-        const trySpeak = () => {
-          const voices = window.speechSynthesis.getVoices();
-          // Tìm giọng đọc Tiếng Việt chuẩn nhất
-          let viVoice = voices.find(v => v.lang.includes('vi-VN') && (v.name.includes('Google') || v.name.includes('Microsoft'))) ||
-                        voices.find(v => v.lang.includes('vi-VN')) ||
-                        voices.find(v => v.lang.toLowerCase().startsWith('vi'));
-          if (viVoice) {
-            utterance.voice = viVoice;
-            console.log('✅ Realtime Voice:', viVoice.name);
-          }
-          utterance.lang = 'vi-VN';
-          utterance.rate = 0.9;
-          utterance.pitch = 1.0;
-          window.speechSynthesis.speak(utterance);
-        };
-        if (window.speechSynthesis.getVoices().length > 0) trySpeak();
-        else window.speechSynthesis.onvoiceschanged = trySpeak;
-      }
+    // 🔊 MẸO: Mở khóa âm thanh trình duyệt ngay khi Admin nhấn chuột lần đầu
+    const unlockAudio = () => {
+      const ctx = new (window.AudioContext || (window as any).webkitAudioContext)();
+      if (ctx.state === 'suspended') ctx.resume();
+      
+      // Phát âm thanh im lặng để mở khóa
+      const audio = new Audio();
+      audio.play().catch(() => {});
+      
+      console.log('🔓 Âm thanh đã được mở khóa!');
+      notifications.hide('audio-blocked');
+      window.removeEventListener('click', unlockAudio);
     };
+    window.addEventListener('click', unlockAudio);
 
-    // 1. Lắng nghe bảng ĐƠN HÀNG (Orders)
-    const ordersChannel = supabase
-      .channel('public:orders')
-      .on(
-        'postgres_changes',
-        { event: 'INSERT', schema: 'public', table: 'orders' },
-        (payload) => {
-          console.log('MỚI: Đã nhận đơn hàng!', payload);
-          
-          const customer = payload.new.customer_name || 'Khách vãng lai';
-          const table = payload.new.table_name || 'Mang đi';
-
-          // Phát âm thanh & Đọc thông báo
-          try {
-             // Phát tiếng chuông mặc định
-             const audio = new Audio('https://assets.mixkit.co/sfx/preview/mixkit-software-interface-start-2574.mp3'); 
-             audio.play().catch(() => {});
-             
-             // AI Đọc
-             speak(`Có đơn hàng mới từ ${table === 'Mang đi' ? 'đơn mang đi' : table}.`);
-          } catch(e) {}
-
-          notifications.show({
-            title: '🔔 ĐƠN HÀNG MỚI!',
-            message: `Bàn: ${table} - Khách: ${customer} vừa đặt món!`,
-            color: 'blue',
-            icon: <BellRing size={20} />,
-            autoClose: 10000,
-            className: 'border-2 border-blue-500 shadow-xl cursor-pointer',
-            onClick: () => {
-              router.push(`/orders/${payload.new.id}`);
+    const playBell = () => {
+      if (localStorage.getItem('admin_muted') === 'true') return;
+      try {
+        const bell = new Audio('/bell-admin.wav');
+        bell.volume = 1.0;
+        bell.play()
+          .then(() => {
+            bell.onended = () => {
+              const msg = new Audio('/am-thanh-don-hang-moi.mp3');
+              msg.volume = 1.0;
+              msg.play().catch(() => {});
+            };
+          })
+          .catch(e => {
+            console.warn('🔔 Lỗi phát chuông:', e);
+            if (e.name === 'NotAllowedError') {
+              notifications.show({
+                id: 'audio-blocked',
+                title: '⚠️ Bạn chưa bật âm thanh',
+                message: 'Hãy nhấn chuột vào bất kỳ đâu trên trang để kích hoạt chuông báo đơn mới!',
+                color: 'orange',
+                autoClose: false,
+              });
             }
           });
+      } catch (e) { }
+    };
 
-          // Làm mới dữ liệu liên quan
-          queryClient.invalidateQueries({ queryKey: ['orders'] });
-          queryClient.invalidateQueries({ queryKey: ['stats'] });
-          queryClient.invalidateQueries({ queryKey: ['tables'] });
-        }
-      )
-      .on(
-        'postgres_changes',
-        { event: 'UPDATE', schema: 'public', table: 'orders' },
-        (payload) => {
-          console.log('CẬP NHẬT: Đơn hàng thay đổi!', payload);
-          queryClient.invalidateQueries({ queryKey: ['orders'] });
-          
-          // Thông báo khi có đơn được thanh toán (để thu dọn bàn)
-          if (payload.new.order_status === 'paid' && payload.old.order_status !== 'paid') {
-             const tableName = payload.new.table_name || 'Mang đi';
-             speak(`Bàn ${tableName} đã thanh toán.`);
-             
-             notifications.show({
-                title: '💰 Đã thanh toán',
-                message: `Bàn: ${tableName} đã thanh toán xong. Vui lòng kiểm tra và dọn dẹp (nếu cần).`,
-                color: 'green',
-                icon: <CheckCircle2 size={18} />
-             });
-             queryClient.invalidateQueries({ queryKey: ['stats'] });
-             queryClient.invalidateQueries({ queryKey: ['tables'] });
+    const playPaySound = () => {
+      if (localStorage.getItem('admin_muted') === 'true') return;
+      try {
+        const audio = new Audio('/thanh-toan.wav');
+        audio.play().catch(e => {
+           if (e.name === 'NotAllowedError') {
+              notifications.show({
+                id: 'audio-blocked',
+                title: '⚠️ Bạn chưa bật âm thanh',
+                message: 'Hãy nhấn chuột vào bất kỳ đâu trên trang để kích hoạt chuông báo!',
+                color: 'orange',
+                autoClose: false,
+              });
+           }
+        });
+      } catch (e) {}
+    };
+
+    const channel = supabase
+      .channel('admin_global_orders')
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'orders' }, async (payload) => {
+        console.log('📬 [REALTIME] NHẬN ĐƠN MỚI Payload:', payload);
+
+        let tableName = 'khách mang đi';
+        if (payload.new.table_id) {
+          try {
+            const res = await https.get(`/tables/${payload.new.table_id}`);
+            tableName = res.data?.data?.table_name || `bàn số ${payload.new.table_id}`;
+          } catch (e) {
+            tableName = `bàn số ${payload.new.table_id}`;
           }
+        } else if (payload.new.table_name) {
+          tableName = payload.new.table_name;
         }
-      )
-      .subscribe();
 
-    // 2. Lắng nghe bảng DANH MỤC & SẢN PHẨM (Nếu cần thiết kế Real-time Menu)
-    const catalogChannel = supabase
-      .channel('public:catalog')
-      .on(
-        'postgres_changes',
-        { event: '*', schema: 'public', table: 'products' },
-        () => queryClient.invalidateQueries({ queryKey: ['products'] })
-      )
-      .on(
-        'postgres_changes',
-        { event: '*', schema: 'public', table: 'categories' },
-        () => queryClient.invalidateQueries({ queryKey: ['categories'] })
-      )
-      .subscribe();
+        console.log(`📣 Đang thông báo cho: ${tableName}`);
+        playBell();
+
+        notifications.show({
+          title: '🔔 CÓ ĐƠN HÀNG MỚI!',
+          message: `Nguồn: ${tableName.toUpperCase()}`,
+          color: 'blue',
+          variant: 'filled',
+          icon: <BellRing size={20} />,
+          autoClose: 10000,
+          onClick: () => router.push(`/orders/${payload.new.id}`)
+        });
+
+        queryClient.invalidateQueries({ queryKey: ['orders'] });
+      })
+      .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'orders' }, (payload) => {
+        console.log('📝 [REALTIME] CẬP NHẬT ĐƠN Payload:', payload);
+        queryClient.invalidateQueries({ queryKey: ['orders'] });
+
+        if (payload.new.order_status === 'paid' && payload.old.order_status !== 'paid') {
+          const table = payload.new.table_name || 'Khách hàng';
+          playPaySound();
+          notifications.show({ title: '💰 Thanh toán', message: `${table} đã thanh toán xong.`, color: 'green' });
+        }
+      })
+      .subscribe((status, err) => {
+        console.log('🔌 Supabase Realtime Status:', status);
+        if (err) console.error('❌ Lỗi kết nối Realtime:', err);
+        if (status === 'SUBSCRIBED') {
+          console.log('✅ Đã kết nối Realtime! Sẵn sàng nhận đơn.');
+        }
+      });
 
     return () => {
-      console.log('--- ĐÓNG KÊNH REAL-TIME ---');
-      supabase.removeChannel(ordersChannel);
-      supabase.removeChannel(catalogChannel);
+      supabase.removeChannel(channel);
     };
-  }, [queryClient]);
+  }, [queryClient, router]);
 
   return null;
 };
