@@ -68,16 +68,18 @@ export default function AdminNav({ children }: { children: React.ReactNode }) {
       
       const trySpeak = () => {
         const voices = window.speechSynthesis.getVoices();
-        // Ưu tiên giọng Google hoặc Microsoft Tiếng Việt
-        const viVoice = voices.find(v => v.lang.includes('vi-VN') && (v.name.includes('Google') || v.name.includes('Microsoft'))) ||
+        // Lọc tìm giọng đọc Tiếng Việt chuẩn nhất (ưu tiên Google/Microsoft)
+        let viVoice = voices.find(v => v.lang.includes('vi-VN') && (v.name.includes('Google') || v.name.includes('Microsoft'))) ||
                       voices.find(v => v.lang.includes('vi-VN')) ||
-                      voices.find(v => v.lang.toLowerCase().includes('vi'));
+                      voices.find(v => v.lang.toLowerCase().startsWith('vi'));
         
         if (viVoice) {
           utterance.voice = viVoice;
+          console.log('✅ Admin Voice:', viVoice.name);
         }
         utterance.lang = 'vi-VN';
         utterance.rate = 0.9;
+        utterance.pitch = 1.0;
         window.speechSynthesis.speak(utterance);
       };
 

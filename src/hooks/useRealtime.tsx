@@ -26,13 +26,17 @@ export const useRealtime = () => {
         const utterance = new SpeechSynthesisUtterance(text);
         const trySpeak = () => {
           const voices = window.speechSynthesis.getVoices();
-          // Ưu tiên giọng Google hoặc Microsoft Tiếng Việt
-          const viVoice = voices.find(v => v.lang.includes('vi-VN') && (v.name.includes('Google') || v.name.includes('Microsoft'))) ||
+          // Tìm giọng đọc Tiếng Việt chuẩn nhất
+          let viVoice = voices.find(v => v.lang.includes('vi-VN') && (v.name.includes('Google') || v.name.includes('Microsoft'))) ||
                         voices.find(v => v.lang.includes('vi-VN')) ||
-                        voices.find(v => v.lang.toLowerCase().includes('vi'));
-          if (viVoice) utterance.voice = viVoice;
+                        voices.find(v => v.lang.toLowerCase().startsWith('vi'));
+          if (viVoice) {
+            utterance.voice = viVoice;
+            console.log('✅ Realtime Voice:', viVoice.name);
+          }
           utterance.lang = 'vi-VN';
-          utterance.rate = 0.95;
+          utterance.rate = 0.9;
+          utterance.pitch = 1.0;
           window.speechSynthesis.speak(utterance);
         };
         if (window.speechSynthesis.getVoices().length > 0) trySpeak();
