@@ -8,6 +8,7 @@ import { BellRing, CheckCircle2, ShoppingCart } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import React from 'react';
 import https from '@/api/https';
+import { usePushSubscription } from './usePushSubscription';
 
 /**
  * Hook lắng nghe thay đổi thời gian thực từ Supabase
@@ -16,6 +17,9 @@ import https from '@/api/https';
 export const useRealtime = () => {
   const queryClient = useQueryClient();
   const router = useRouter();
+
+  // Đăng ký Admin nhận Push Notification khi ứng dụng ẩn/đóng
+  usePushSubscription('admin');
 
   useEffect(() => {
     console.log('🏁 useRealtime Initialized');
