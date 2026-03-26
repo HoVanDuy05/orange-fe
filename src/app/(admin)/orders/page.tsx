@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useRouter } from 'next/navigation';
 import https from '@/api/https';
@@ -16,7 +16,7 @@ import {
   IconToolsKitchen2,
   IconPackage,
   IconBuildingBank,
-  IconAlertTriangle
+  IconAlertTriangle,
 } from '@tabler/icons-react';
 import { notifications } from '@mantine/notifications';
 import { SectionLoader } from '@/components/common/GlobalLoading';
@@ -64,7 +64,7 @@ export default function OrdersPage() {
         return [];
       }
     },
-    refetchInterval: 30000,
+    refetchInterval: 15000,
   });
 
   const orders: any[] = Array.isArray(rawData) ? rawData : [];

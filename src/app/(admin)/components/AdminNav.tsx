@@ -11,6 +11,10 @@ import { useRouter, usePathname } from 'next/navigation';
 import Link from 'next/link';
 import { useAuth } from '@/store/authStore';
 import { useRealtime } from '@/hooks/useRealtime';
+import { useQuery } from '@tanstack/react-query';
+import https from '@/api/https';
+import { notifications } from '@mantine/notifications';
+import { IconVolume, IconVolumeOff } from '@tabler/icons-react';
 
 const navItems = [
   // 1. Tổng quan
@@ -40,6 +44,56 @@ export default function AdminNav({ children }: { children: React.ReactNode }) {
   const { user, logout, isLoading } = useAuth();
   const realtime = useRealtime();
   const [isClient, setIsClient] = useState(false);
+
+  // Global Audio/TTS Notification Logic
+  const [soundEnabled, setSoundEnabled] = useState(true);
+  const prevOrdersCount = React.useRef<number>(0);
+
+  const { data: rawOrders } = useQuery({
+    queryKey: ['orders-global'],
+    queryFn: async () => {
+      try {
+        const res = await https.get('/orders');
+        return Array.isArray(res.data) ? res.data : (res.data?.data || []);
+      } catch { return []; }
+    },
+    refetchInterval: 15000,
+    enabled: !!user,
+  });
+
+  const speak = (text: string) => {
+    if ('speechSynthesis' in window && soundEnabled) {
+      const utterance = new SpeechSynthesisUtterance(text);
+      utterance.lang = 'vi-VN';
+      utterance.rate = 1;
+      window.speechSynthesis.speak(utterance);
+    }
+  };
+
+  useEffect(() => {
+    if (rawOrders && rawOrders.length > prevOrdersCount.current) {
+      if (prevOrdersCount.current > 0 && soundEnabled) {
+        // Play notification sound
+        const audio = new Audio('https://assets.mixkit.co/sfx/preview/mixkit-software-interface-start-2574.mp3');
+        audio.play().catch(() => {});
+
+        // Notification popup
+        const latestOrder = rawOrders[0];
+        const tableName = latestOrder?.table_name || 'Mang đi';
+        notifications.show({
+          title: '🔔 CÓ ĐƠN HÀNG MỚI!',
+          message: `Một đơn hàng vừa được gửi đến từ: ${tableName}`,
+          color: 'blue',
+          autoClose: 10000,
+          position: 'top-right'
+        });
+
+        // TTS Read Aloud
+        speak(`Có đơn hàng mới từ ${tableName === 'Mang đi' ? 'đơn mang đi' : tableName}`);
+      }
+      prevOrdersCount.current = rawOrders.length;
+    }
+  }, [rawOrders, soundEnabled]);
 
   useEffect(() => {
     setIsClient(true);
@@ -74,15 +128,25 @@ export default function AdminNav({ children }: { children: React.ReactNode }) {
             <Burger opened={opened} onClick={toggle} hiddenFrom="sm" size="sm" />
             <img src="/logo-iuh.png" alt="IUH Logo" className="h-[45px] w-auto object-contain" />
           </Group>
-          <UnstyledButton onClick={() => router.push('/profile')}>
-            <Group gap="xs">
-              <Avatar radius="xl" color="blue" />
-              <Box visibleFrom="sm">
-                <Text size="sm" fw={600}>{user?.name || 'Admin'}</Text>
-                <Text size="xs" c="dimmed">Quản trị viên</Text>
-              </Box>
-            </Group>
-          </UnstyledButton>
+          <Group gap="sm">
+            <UnstyledButton 
+              onClick={() => setSoundEnabled(!soundEnabled)}
+              className={`p-2 rounded-full transition-colors ${soundEnabled ? 'hover:bg-blue-50 text-blue-600' : 'hover:bg-slate-50 text-slate-400'}`}
+              title={soundEnabled ? 'Chuông báo: Bật' : 'Chuông báo: Tắt'}
+            >
+              {soundEnabled ? <IconVolume size={20} /> : <IconVolumeOff size={20} />}
+            </UnstyledButton>
+            
+            <UnstyledButton onClick={() => router.push('/profile')}>
+              <Group gap="xs">
+                <Avatar radius="xl" color="blue" />
+                <Box visibleFrom="sm">
+                  <Text size="sm" fw={600}>{user?.name || 'Admin'}</Text>
+                  <Text size="xs" c="dimmed">Quản trị viên</Text>
+                </Box>
+              </Group>
+            </UnstyledButton>
+          </Group>
         </Group>
       </AppShell.Header>
 
