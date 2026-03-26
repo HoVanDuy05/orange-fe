@@ -8,28 +8,29 @@ import {
 import { useDisclosure } from '@mantine/hooks';
 import { LayoutDashboard, ShoppingBag, FolderTree, Armchair, UserIcon, LogOut, Warehouse, Image as ImageIcon, ShoppingCart, ConciergeBell } from 'lucide-react';
 import { useRouter, usePathname } from 'next/navigation';
+import Link from 'next/link';
 import { useAuth } from '@/store/authStore';
 import { useRealtime } from '@/hooks/useRealtime';
 
 const navItems = [
   // 1. Tổng quan
-  { href: '/admin', label: 'Dashboard', icon: LayoutDashboard },
+  { href: '/', label: 'Dashboard', icon: LayoutDashboard },
 
   // 2. Bán hàng (quan trọng nhất)
-  { href: '/admin/pos', label: 'Gọi món (POS)', icon: ConciergeBell },
-  { href: '/admin/orders', label: 'Đơn hàng', icon: ShoppingCart },
+  { href: '/pos', label: 'Gọi món (POS)', icon: ConciergeBell },
+  { href: '/orders', label: 'Đơn hàng', icon: ShoppingCart },
 
   // 3. Sản phẩm & danh mục
-  { href: '/admin/products', label: 'Sản phẩm', icon: ShoppingBag },
-  { href: '/admin/categories', label: 'Danh mục', icon: FolderTree },
+  { href: '/products', label: 'Sản phẩm', icon: ShoppingBag },
+  { href: '/categories', label: 'Danh mục', icon: FolderTree },
 
   // 4. Vận hành quán
-  { href: '/admin/tables', label: 'Bàn', icon: Armchair },
-  { href: '/admin/stock', label: 'Kho', icon: Warehouse },
+  { href: '/tables', label: 'Bàn', icon: Armchair },
+  { href: '/stock', label: 'Kho', icon: Warehouse },
 
   // 5. Nội dung & hệ thống
-  { href: '/admin/media', label: 'Media', icon: ImageIcon },
-  { href: '/admin/users', label: 'Người dùng', icon: UserIcon },
+  { href: '/media', label: 'Media', icon: ImageIcon },
+  // { href: '/users', label: 'Người dùng', icon: UserIcon },
 ];
 
 export default function AdminNav({ children }: { children: React.ReactNode }) {
@@ -73,7 +74,7 @@ export default function AdminNav({ children }: { children: React.ReactNode }) {
             <Burger opened={opened} onClick={toggle} hiddenFrom="sm" size="sm" />
             <img src="/logo-iuh.png" alt="IUH Logo" className="h-[45px] w-auto object-contain" />
           </Group>
-          <UnstyledButton onClick={() => router.push('/admin/profile')}>
+          <UnstyledButton onClick={() => router.push('/profile')}>
             <Group gap="xs">
               <Avatar radius="xl" color="blue" />
               <Box visibleFrom="sm">
@@ -94,10 +95,11 @@ export default function AdminNav({ children }: { children: React.ReactNode }) {
             {navItems.map((item) => (
               <NavLink
                 key={item.href}
+                component={Link}
                 href={item.href}
                 label={<Text size="sm" fw={600}>{item.label}</Text>}
                 leftSection={<item.icon size={18} />}
-                active={pathname === item.href || (pathname.startsWith(item.href + '/') && item.href !== '/admin')}
+                active={!!pathname && (pathname === item.href || (pathname.startsWith(item.href + '/') && item.href !== '/'))}
                 variant="light"
                 color="blue"
                 className={`rounded-lg mb-1 transition-all ${pathname === item.href

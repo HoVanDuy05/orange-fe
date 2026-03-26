@@ -45,13 +45,13 @@ export default function StockHistoryPage() {
       {/* Breadcrumbs & Navigation */}
       <Stack gap={2}>
         <Breadcrumbs>
-          <Link href="/admin"><Text size="sm" c="dimmed" style={{ cursor: 'pointer' }}>Dashboard</Text></Link>
-          <Link href="/admin/stock"><Text size="sm" c="dimmed" style={{ cursor: 'pointer' }}>Quản lý Kho</Text></Link>
+          <Link href="/"><Text size="sm" c="dimmed" style={{ cursor: 'pointer' }}>Dashboard</Text></Link>
+          <Link href="/stock"><Text size="sm" c="dimmed" style={{ cursor: 'pointer' }}>Quản lý Kho</Text></Link>
           <Text size="sm" c="blue" fw={700}>Nhật ký chỉnh sửa</Text>
         </Breadcrumbs>
         <Group justify="space-between" mt="xs">
           <Group gap="md">
-            <ActionIcon variant="light" color="blue" size="xl" radius="md" onClick={() => router.push('/admin/stock')}>
+            <ActionIcon variant="light" color="blue" size="xl" radius="md" onClick={() => router.push('/stock')}>
               <ArrowLeft size={20} />
             </ActionIcon>
             <Title order={1} className="text-blue-900 font-extrabold tracking-tight">Chi tiết Nhật ký Thay đổi</Title>
@@ -108,7 +108,7 @@ export default function StockHistoryPage() {
               Mọi hành động chỉnh sửa của quản trị viên đều được hệ thống "chụp ảnh" lại trạng thái cũ
               để phục vụ việc đối soát và minh bạch tài chính.
             </Text>
-            <Button fullWidth mt="xl" variant="light" onClick={() => router.push('/admin/stock')}>Quay lại bảng chính</Button>
+            <Button fullWidth mt="xl" variant="light" onClick={() => router.push('/stock')}>Quay lại bảng chính</Button>
           </Card>
         </Stack>
 

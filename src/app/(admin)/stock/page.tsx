@@ -167,7 +167,7 @@ export default function StockPage() {
       render: (s) => (
         <Group gap={5} justify="center">
            <ActionIcon variant="light" color="blue" onClick={() => handleOpenEdit(s)} size="lg" radius="md"><Edit size={16} /></ActionIcon>
-           <ActionIcon variant="light" color="teal" onClick={() => router.push(`/admin/stock/history/${s.id}`)} size="lg" radius="md"><History size={16} /></ActionIcon>
+           <ActionIcon variant="light" color="teal" onClick={() => router.push(`/stock/history/${s.id}`)} size="lg" radius="md"><History size={16} /></ActionIcon>
            <ActionIcon variant="light" color="red" size="lg" radius="md" onClick={() => modals.openConfirmModal({
               title: 'Xác nhận xoá phiếu',
               children: <Text size="sm">Hành động này sẽ gỡ bỏ số tiền {Number(s.cost).toLocaleString()} đ ra khỏi báo cáo. Xoá?</Text>,

@@ -27,7 +27,7 @@ export default function LoginPage() {
         message: 'Đăng nhập trang Quản trị viên thành công.', 
         color: 'blue' 
       });
-      router.push('/admin');
+      router.push('/');
     } catch (error: any) {
       notifications.show({ 
         title: 'Từ chối truy cập', 

@@ -7,11 +7,12 @@ import {
   Title, Text, Stack, Group, Card, Badge, Button, TextInput,
   NumberInput, Select, ActionIcon, Divider, ScrollArea, Box,
   Image, Center, Textarea, Paper, SimpleGrid, UnstyledButton,
-  ThemeIcon, Indicator, rem
+  ThemeIcon, Indicator, rem, SegmentedControl, Loader
 } from '@mantine/core';
 import {
   Search, ShoppingCart, Plus, Minus, Trash2, ChefHat,
-  Tag, Utensils, Receipt, CheckCircle2, X, User, StickyNote
+  Tag, Utensils, Receipt, CheckCircle2, X, User, StickyNote, ShoppingBag,
+  CreditCard
 } from 'lucide-react';
 import { notifications } from '@mantine/notifications';
 import { SectionLoader } from '@/components/common/GlobalLoading';
@@ -38,6 +39,7 @@ export default function POSPage() {
   const [cart, setCart] = useState<CartItem[]>([]);
 
   // Order info
+  const [orderType, setOrderType] = useState<string>('dine-in'); // 'dine-in' | 'take-away'
   const [tableId, setTableId] = useState<string | null>(null);
   const [customerName, setCustomerName] = useState('');
   const [customerPhone, setCustomerPhone] = useState('');
@@ -60,7 +62,7 @@ export default function POSPage() {
     },
   });
 
-  const { data: rawTables = [] } = useQuery({
+  const { data: rawTables = [], isLoading: tablesLoading } = useQuery({
     queryKey: ['tables'],
     queryFn: async () => {
       const res = await https.get('/tables');
@@ -117,7 +119,7 @@ export default function POSPage() {
   const createOrder = useMutation({
     mutationFn: () =>
       https.post('/orders', {
-        table_id: tableId ? Number(tableId) : null,
+        table_id: orderType === 'dine-in' ? (tableId ? Number(tableId) : null) : null,
         customer_name: customerName || null,
         customer_phone: customerPhone || null,
         note: note || null,
@@ -137,6 +139,7 @@ export default function POSPage() {
       });
       setCart([]);
       setTableId(null);
+      setOrderType('dine-in');
       setCustomerName('');
       setCustomerPhone('');
       setNote('');
@@ -166,8 +169,8 @@ export default function POSPage() {
           </Stack>
         </Group>
         {cartCount > 0 && (
-          <Badge size="xl" variant="filled" color="blue" radius="md">
-            🛒 {cartCount} món · {VND(cartTotal)}
+          <Badge size="xl" variant="filled" color="blue" radius="md" leftSection={<ShoppingCart size={16} />}>
+            {cartCount} món · {VND(cartTotal)}
           </Badge>
         )}
       </Group>
@@ -203,10 +206,19 @@ export default function POSPage() {
 
           {/* Category quick-filter pills */}
           <Box px="md" pt="xs" pb="xs" className="bg-white" style={{ flexShrink: 0, borderBottom: '1px solid #f1f5f9' }}>
-            <Group gap="xs" wrap="nowrap" style={{ overflowX: 'auto', paddingBottom: 4 }}>
+            <Group gap="xs" wrap="nowrap" style={{ overflowX: 'auto', paddingBottom: 6 }}>
               <UnstyledButton
                 onClick={() => setFilterCat(null)}
-                className={`px-3 py-1 rounded-full text-sm font-semibold transition-all ${!filterCat ? 'bg-blue-600 text-white' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'}`}
+                style={{
+                  padding: '6px 16px',
+                  borderRadius: '100px',
+                  fontSize: '13px',
+                  fontWeight: 800,
+                  transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
+                  backgroundColor: !filterCat ? '#2563eb' : '#f1f5f9',
+                  color: !filterCat ? 'white' : '#64748b',
+                  boxShadow: !filterCat ? '0 8px 16px -4px rgba(37, 99, 235, 0.3)' : 'none',
+                }}
               >
                 Tất cả
               </UnstyledButton>
@@ -214,7 +226,17 @@ export default function POSPage() {
                 <UnstyledButton
                   key={c.id}
                   onClick={() => setFilterCat(filterCat === c.id.toString() ? null : c.id.toString())}
-                  className={`px-3 py-1 rounded-full text-sm font-semibold transition-all whitespace-nowrap ${filterCat === c.id.toString() ? 'bg-blue-600 text-white' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'}`}
+                  style={{
+                    padding: '6px 16px',
+                    borderRadius: '100px',
+                    fontSize: '13px',
+                    fontWeight: 800,
+                    transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
+                    backgroundColor: filterCat === c.id.toString() ? '#2563eb' : '#f1f5f9',
+                    color: filterCat === c.id.toString() ? 'white' : '#64748b',
+                    boxShadow: filterCat === c.id.toString() ? '0 8px 16px -4px rgba(37, 99, 235, 0.3)' : 'none',
+                    whiteSpace: 'nowrap',
+                  }}
                 >
                   {c.category_name}
                 </UnstyledButton>
@@ -390,22 +412,42 @@ export default function POSPage() {
           {/* Order info & Confirm */}
           <Box p="md" className="bg-white border-t border-slate-200" style={{ flexShrink: 0 }}>
             <Stack gap="sm">
-              {/* Table */}
-              <Select
-                label="Bàn"
-                placeholder="Chọn bàn (hoặc mang về)"
-                clearable
-                leftSection={<Utensils size={16} />}
-                data={tables.map((t: any) => ({
-                  value: t.id.toString(),
-                  label: `${t.table_name} ${t.table_status === 'occupied' ? '🔴' : '🟢'}`,
-                  disabled: t.table_status === 'occupied',
-                }))}
-                value={tableId}
-                onChange={setTableId}
-                radius="md"
-                size="sm"
-              />
+              {/* Order Type */}
+              <Stack gap={4}>
+                <Text size="sm" fw={700}>Hình thức phục vụ</Text>
+                <SegmentedControl
+                  fullWidth
+                  value={orderType}
+                  onChange={setOrderType}
+                  data={[
+                    { label: 'Ăn tại bàn', value: 'dine-in' },
+                    { label: 'Mang đi', value: 'take-away' },
+                  ]}
+                  radius="md"
+                  color="blue"
+                />
+              </Stack>
+
+              {/* Table selection - only if dine-in */}
+              {orderType === 'dine-in' && (
+                <Select
+                  label="Bàn số"
+                  placeholder={tablesLoading ? "Đang tải danh sách bàn..." : "Chọn bàn phục vụ"}
+                  clearable
+                  leftSection={tablesLoading ? <Loader size={14} /> : <Utensils size={16} />}
+                  data={tables.map((t: any) => ({
+                    value: t.id.toString(),
+                    label: `${t.table_name} ${t.table_status === 'occupied' ? '🔴' : '🟢'}`,
+                    disabled: t.table_status === 'occupied',
+                  }))}
+                  value={tableId}
+                  onChange={setTableId}
+                  radius="md"
+                  size="sm"
+                  loading={tablesLoading}
+                  error={orderType === 'dine-in' && !tableId && cart.length > 0 ? 'Vui lòng chọn bàn' : null}
+                />
+              )}
 
               {/* Customer */}
               <SimpleGrid cols={2} spacing="xs">
@@ -458,7 +500,7 @@ export default function POSPage() {
                 variant="gradient"
                 gradient={{ from: 'blue', to: 'cyan' }}
                 leftSection={<CheckCircle2 size={18} />}
-                disabled={cart.length === 0}
+                disabled={cart.length === 0 || (orderType === 'dine-in' && !tableId)}
                 loading={createOrder.isPending}
                 onClick={() => createOrder.mutate()}
                 className="shadow-md"
