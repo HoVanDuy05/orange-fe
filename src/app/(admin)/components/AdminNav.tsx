@@ -63,23 +63,29 @@ export default function AdminNav({ children }: { children: React.ReactNode }) {
 
   const speak = (text: string) => {
     if ('speechSynthesis' in window && soundEnabled) {
-      // Create utterance
+      window.speechSynthesis.cancel();
       const utterance = new SpeechSynthesisUtterance(text);
       
-      // Attempt to find a Vietnamese voice
-      const voices = window.speechSynthesis.getVoices();
-      const viVoice = voices.find(v => v.lang.includes('vi-VN'));
-      if (viVoice) {
-        utterance.voice = viVoice;
+      const trySpeak = () => {
+        const voices = window.speechSynthesis.getVoices();
+        // Ưu tiên giọng Google hoặc Microsoft Tiếng Việt
+        const viVoice = voices.find(v => v.lang.includes('vi-VN') && (v.name.includes('Google') || v.name.includes('Microsoft'))) ||
+                      voices.find(v => v.lang.includes('vi-VN')) ||
+                      voices.find(v => v.lang.toLowerCase().includes('vi'));
+        
+        if (viVoice) {
+          utterance.voice = viVoice;
+        }
+        utterance.lang = 'vi-VN';
+        utterance.rate = 0.9;
+        window.speechSynthesis.speak(utterance);
+      };
+
+      if (window.speechSynthesis.getVoices().length > 0) {
+        trySpeak();
+      } else {
+        window.speechSynthesis.onvoiceschanged = trySpeak;
       }
-      
-      utterance.lang = 'vi-VN';
-      utterance.rate = 1;
-      utterance.pitch = 1;
-      
-      // Stop any current speaking to avoid overlaps
-      window.speechSynthesis.cancel();
-      window.speechSynthesis.speak(utterance);
     }
   };
 

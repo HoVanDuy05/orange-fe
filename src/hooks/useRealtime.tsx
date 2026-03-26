@@ -19,6 +19,27 @@ export const useRealtime = () => {
   useEffect(() => {
     console.log('--- ĐANG KHỞI TẠO REAL-TIME UPDATE ---');
 
+    // Helper: TTS Đọc tiếng Việt
+    const speak = (text: string) => {
+      if ('speechSynthesis' in window) {
+        window.speechSynthesis.cancel();
+        const utterance = new SpeechSynthesisUtterance(text);
+        const trySpeak = () => {
+          const voices = window.speechSynthesis.getVoices();
+          // Ưu tiên giọng Google hoặc Microsoft Tiếng Việt
+          const viVoice = voices.find(v => v.lang.includes('vi-VN') && (v.name.includes('Google') || v.name.includes('Microsoft'))) ||
+                        voices.find(v => v.lang.includes('vi-VN')) ||
+                        voices.find(v => v.lang.toLowerCase().includes('vi'));
+          if (viVoice) utterance.voice = viVoice;
+          utterance.lang = 'vi-VN';
+          utterance.rate = 0.95;
+          window.speechSynthesis.speak(utterance);
+        };
+        if (window.speechSynthesis.getVoices().length > 0) trySpeak();
+        else window.speechSynthesis.onvoiceschanged = trySpeak;
+      }
+    };
+
     // 1. Lắng nghe bảng ĐƠN HÀNG (Orders)
     const ordersChannel = supabase
       .channel('public:orders')
@@ -28,21 +49,28 @@ export const useRealtime = () => {
         (payload) => {
           console.log('MỚI: Đã nhận đơn hàng!', payload);
           
-          // Thông báo âm thanh (giả lập một tiếng chuông nếu trình duyệt cho phép)
+          const customer = payload.new.customer_name || 'Khách vãng lai';
+          const table = payload.new.table_name || 'Mang đi';
+
+          // Phát âm thanh & Đọc thông báo
           try {
-             const audio = new Audio('/notification.mp3'); 
+             // Phát tiếng chuông mặc định
+             const audio = new Audio('https://assets.mixkit.co/sfx/preview/mixkit-software-interface-start-2574.mp3'); 
              audio.play().catch(() => {});
+             
+             // AI Đọc
+             speak(`Có đơn hàng mới từ ${table === 'Mang đi' ? 'đơn mang đi' : table}.`);
           } catch(e) {}
 
           notifications.show({
             title: '🔔 ĐƠN HÀNG MỚI!',
-            message: `Khách hàng: ${payload.new.customer_name || 'Khách vãng lai'} vừa đặt món mới! Nhấn để xem chi tiết.`,
+            message: `Bàn: ${table} - Khách: ${customer} vừa đặt món!`,
             color: 'blue',
             icon: <BellRing size={20} />,
             autoClose: 10000,
             className: 'border-2 border-blue-500 shadow-xl cursor-pointer',
             onClick: () => {
-              router.push(`/admin/orders/${payload.new.id}`);
+              router.push(`/orders/${payload.new.id}`);
             }
           });
 
@@ -59,15 +87,19 @@ export const useRealtime = () => {
           console.log('CẬP NHẬT: Đơn hàng thay đổi!', payload);
           queryClient.invalidateQueries({ queryKey: ['orders'] });
           
-          // Nếu trạng thái đổi sang 'completed' (Hoàn thành)
-          if (payload.new.status === 'completed' && payload.old.status !== 'completed') {
+          // Thông báo khi có đơn được thanh toán (để thu dọn bàn)
+          if (payload.new.order_status === 'paid' && payload.old.order_status !== 'paid') {
+             const tableName = payload.new.table_name || 'Mang đi';
+             speak(`Bàn ${tableName} đã thanh toán.`);
+             
              notifications.show({
-                title: 'Đơn hàng hoàn tất',
-                message: `Bàn ${payload.new.table_id} đã thanh toán xong.`,
+                title: '💰 Đã thanh toán',
+                message: `Bàn: ${tableName} đã thanh toán xong. Vui lòng kiểm tra và dọn dẹp (nếu cần).`,
                 color: 'green',
                 icon: <CheckCircle2 size={18} />
              });
              queryClient.invalidateQueries({ queryKey: ['stats'] });
+             queryClient.invalidateQueries({ queryKey: ['tables'] });
           }
         }
       )
