@@ -444,7 +444,7 @@ export default function POSPage() {
                   onChange={setTableId}
                   radius="md"
                   size="sm"
-                  loading={tablesLoading}
+                  rightSection={tablesLoading ? <Loader size={14} color="blue" /> : null}
                   error={orderType === 'dine-in' && !tableId && cart.length > 0 ? 'Vui lòng chọn bàn' : null}
                 />
               )}
