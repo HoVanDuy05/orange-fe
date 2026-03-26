@@ -6,18 +6,28 @@ import {
   Stack
 } from '@mantine/core';
 import { useDisclosure } from '@mantine/hooks';
-import { LayoutDashboard, ShoppingBag, FolderTree, Armchair, UserIcon, LogOut, Warehouse, Image as ImageIcon, ShoppingCart } from 'lucide-react';
+import { LayoutDashboard, ShoppingBag, FolderTree, Armchair, UserIcon, LogOut, Warehouse, Image as ImageIcon, ShoppingCart, ConciergeBell } from 'lucide-react';
 import { useRouter, usePathname } from 'next/navigation';
 import { useAuth } from '@/store/authStore';
 import { useRealtime } from '@/hooks/useRealtime';
 
 const navItems = [
+  // 1. Tổng quan
   { href: '/admin', label: 'Dashboard', icon: LayoutDashboard },
+
+  // 2. Bán hàng (quan trọng nhất)
+  { href: '/admin/pos', label: 'Gọi món (POS)', icon: ConciergeBell },
   { href: '/admin/orders', label: 'Đơn hàng', icon: ShoppingCart },
+
+  // 3. Sản phẩm & danh mục
   { href: '/admin/products', label: 'Sản phẩm', icon: ShoppingBag },
   { href: '/admin/categories', label: 'Danh mục', icon: FolderTree },
+
+  // 4. Vận hành quán
   { href: '/admin/tables', label: 'Bàn', icon: Armchair },
   { href: '/admin/stock', label: 'Kho', icon: Warehouse },
+
+  // 5. Nội dung & hệ thống
   { href: '/admin/media', label: 'Media', icon: ImageIcon },
   { href: '/admin/users', label: 'Người dùng', icon: UserIcon },
 ];

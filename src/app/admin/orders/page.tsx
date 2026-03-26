@@ -1,20 +1,21 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useRouter } from 'next/navigation';
 import https from '@/api/https';
-import { supabase } from '@/lib/supabase';
 import {
   Title, Card, Text, Badge, Stack, Group, Button,
-  Box, Tabs, Paper, Table, ScrollArea, ActionIcon
+  Box, Tabs, Paper, Table, ScrollArea, Modal, Radio, Divider, Textarea
 } from '@mantine/core';
+import { useDisclosure } from '@mantine/hooks';
 import {
   IconShoppingCart, IconEye, IconClock, IconCircleCheck,
   IconChefHat, IconCash, IconCircleX,
   IconToolsKitchen2,
   IconPackage,
-  IconBuildingBank
+  IconBuildingBank,
+  IconAlertTriangle
 } from '@tabler/icons-react';
 import { notifications } from '@mantine/notifications';
 import { SectionLoader } from '@/components/common/GlobalLoading';
@@ -36,6 +37,17 @@ export default function OrdersPage() {
   const router = useRouter();
   const [filterStatus, setFilterStatus] = useState<string | null>(null);
 
+  // Payment modal state
+  const [payModalOpened, { open: openPayModal, close: closePayModal }] = useDisclosure(false);
+  const [selectedOrderId, setSelectedOrderId] = useState<number | null>(null);
+  const [selectedOrderAmount, setSelectedOrderAmount] = useState<number>(0);
+  const [paymentMethod, setPaymentMethod] = useState<string>('cash');
+
+  // Cancel modal state
+  const [cancelModalOpened, { open: openCancelModal, close: closeCancelModal }] = useDisclosure(false);
+  const [cancelOrderId, setCancelOrderId] = useState<number | null>(null);
+  const [cancelReason, setCancelReason] = useState('');
+
   const { data: rawData, isLoading } = useQuery({
     queryKey: ['orders'],
     queryFn: async () => {
@@ -48,8 +60,8 @@ export default function OrdersPage() {
   const orders: any[] = Array.isArray(rawData) ? rawData : [];
 
   const updateStatus = useMutation({
-    mutationFn: ({ id, status }: { id: number; status: string }) =>
-      https.patch(`/orders/${id}/status`, { status }),
+    mutationFn: ({ id, status, payment_method, cancel_reason }: { id: number; status: string; payment_method?: string; cancel_reason?: string }) =>
+      https.patch(`/orders/${id}/status`, { status, payment_method, cancel_reason }),
     onSuccess: (_, vars) => {
       queryClient.invalidateQueries({ queryKey: ['orders'] });
       queryClient.invalidateQueries({ queryKey: ['stats'] });
@@ -59,13 +71,55 @@ export default function OrdersPage() {
     }
   });
 
+  const handleOpenPayment = (orderId: number, amount: number) => {
+    setSelectedOrderId(orderId);
+    setSelectedOrderAmount(amount);
+    setPaymentMethod('cash');
+    openPayModal();
+  };
+
+  const handleConfirmPayment = () => {
+    if (!selectedOrderId) return;
+    updateStatus.mutate(
+      { id: selectedOrderId, status: 'paid', payment_method: paymentMethod },
+      {
+        onSuccess: () => closePayModal(),
+        onError: () => {
+          notifications.show({ title: 'Lỗi', message: 'Không thể cập nhật đơn hàng', color: 'red' });
+        }
+      }
+    );
+  };
+
+  const handleOpenCancel = (orderId: number) => {
+    setCancelOrderId(orderId);
+    setCancelReason('');
+    openCancelModal();
+  };
+
+  const handleConfirmCancel = () => {
+    if (!cancelOrderId) return;
+    updateStatus.mutate(
+      { id: cancelOrderId, status: 'cancelled', cancel_reason: cancelReason || undefined },
+      {
+        onSuccess: () => {
+          closeCancelModal();
+          setCancelReason('');
+        },
+        onError: () => {
+          notifications.show({ title: 'Lỗi', message: 'Không thể huỷ đơn hàng', color: 'red' });
+        }
+      }
+    );
+  };
+
   const filteredOrders = filterStatus
     ? orders.filter((o) => o.order_status === filterStatus)
     : orders;
 
   const pendingCount = orders.filter(o => o.order_status === 'pending').length;
 
-  const todayOrders = orders.filter((o) => dayjs(o.created_at).isSame(dayjs(), 'day') && o.order_status === 'paid');
+  const todayOrders = orders.filter((o) => dayjs(o.updated_at || o.created_at).isSame(dayjs(), 'day') && o.order_status === 'paid');
   const cashRevenue = todayOrders.filter(o => o.payment_method === 'cash').reduce((sum, o) => sum + Number(o.total_amount), 0);
   const transferRevenue = todayOrders.filter(o => o.payment_method === 'transfer').reduce((sum, o) => sum + Number(o.total_amount), 0);
 
@@ -77,7 +131,7 @@ export default function OrdersPage() {
       <Group justify="space-between" align="flex-end" wrap="wrap" gap="md">
         <Stack gap={4}>
           <Title order={1} className="text-slate-800 text-4xl font-black">Quản lý Đơn hàng</Title>
-          <Text size="sm" c="dimmed" fw={500}>Theo dõi và xử lý đơn hàng từ tất cả các bàn • Tự động làm mới mỗi 15 giây</Text>
+          <Text size="sm" c="dimmed" fw={500}>Theo dõi và xử lý đơn hàng từ tất cả các bàn • Tự động làm mới mỗi 30 giây</Text>
         </Stack>
         <Group gap="sm">
           <Paper withBorder radius="md" px="lg" py="xs" className="bg-blue-50 border-blue-100">
@@ -130,7 +184,7 @@ export default function OrdersPage() {
           <Tabs.Tab value="all" fw={700}>Tất cả ({orders.length})</Tabs.Tab>
           {Object.entries(STATUS_CONFIG).map(([key, cfg]) => {
             const count = orders.filter(o => o.order_status === key).length;
-            if (count === 0 && key !== 'pending') return null; // Luôn hiện tab pending nếu có
+            if (count === 0 && key !== 'pending') return null;
             return (
               <Tabs.Tab key={key} value={key} leftSection={<cfg.icon size={15} stroke={2} />} fw={600} color={cfg.color}>
                 {cfg.label} ({count})
@@ -154,7 +208,7 @@ export default function OrdersPage() {
                 <Table.Tr>
                   <Table.Th ta="center" fw={700} w={100}>Mã Đơn</Table.Th>
                   <Table.Th ta="center" fw={700} w={120}>Bàn</Table.Th>
-                  <Table.Th ta="center" fw={700} w={160}>Trạng thái</Table.Th>
+                  <Table.Th ta="center" fw={700} w={180}>Trạng thái</Table.Th>
                   <Table.Th ta="right" fw={700} w={150}>Tổng tiền</Table.Th>
                   <Table.Th ta="center" fw={700} w={180}>Thời gian</Table.Th>
                   <Table.Th ta="center" fw={700}>Hành động Admin</Table.Th>
@@ -166,7 +220,6 @@ export default function OrdersPage() {
                   const StatusIcon = cfg.icon;
                   const isPaid = order.order_status === 'paid';
                   const isCancelled = order.order_status === 'cancelled';
-                  const isDone = order.order_status === 'done';
                   const isActive = !isPaid && !isCancelled;
 
                   return (
@@ -188,6 +241,16 @@ export default function OrdersPage() {
                         >
                           {cfg.label}
                         </Badge>
+                        {isPaid && order.payment_method && (
+                          <Text size="xs" c="dimmed" mt={2}>
+                            {order.payment_method === 'cash' ? '💵 Tiền mặt' : '🏦 Chuyển khoản'}
+                          </Text>
+                        )}
+                        {isCancelled && order.cancel_reason && (
+                          <Text size="xs" c="red.6" mt={2} lineClamp={1} title={order.cancel_reason}>
+                            📋 {order.cancel_reason}
+                          </Text>
+                        )}
                       </Table.Td>
                       <Table.Td ta="right">
                         <Text fw={800} c={isPaid ? 'green' : 'blue'}>
@@ -200,7 +263,7 @@ export default function OrdersPage() {
                       </Table.Td>
                       <Table.Td>
                         <Group gap="xs" justify="center">
-                          {/* 2 nút thao tác chính luôn ưu tiên hiển thị */}
+                          {/* Nút Ra món */}
                           {isActive && order.order_status !== 'done' && (
                             <Button
                               size="xs"
@@ -214,20 +277,33 @@ export default function OrdersPage() {
                             </Button>
                           )}
 
+                          {/* Nút Thanh toán - mở modal chọn phương thức */}
                           {isActive && (
                             <Button
                               size="xs"
                               variant="filled"
                               color="green"
                               leftSection={<IconCash size={14} stroke={2} />}
-                              loading={updateStatus.isPending}
-                              onClick={() => updateStatus.mutate({ id: order.id, status: 'paid' })}
+                              onClick={() => handleOpenPayment(order.id, Number(order.total_amount))}
                             >
                               Thanh toán
                             </Button>
                           )}
 
-                          {/* Nút Xem chi tiết với text */}
+                          {/* Nút Huỷ - mở modal nhập lý do */}
+                          {isActive && (
+                            <Button
+                              size="xs"
+                              variant="light"
+                              color="red"
+                              leftSection={<IconCircleX size={14} stroke={2} />}
+                              onClick={() => handleOpenCancel(order.id)}
+                            >
+                              Huỷ
+                            </Button>
+                          )}
+
+                          {/* Nút Xem chi tiết */}
                           <Button
                             variant="subtle"
                             color="blue"
@@ -247,6 +323,146 @@ export default function OrdersPage() {
           </ScrollArea>
         )}
       </Card>
+
+      {/* ===== Modal chọn phương thức thanh toán ===== */}
+      <Modal
+        opened={payModalOpened}
+        onClose={closePayModal}
+        title={
+          <Text fw={900} size="lg" c="green.8">
+            💳 Xác nhận Thanh toán
+          </Text>
+        }
+        centered
+        radius="lg"
+        size="sm"
+        overlayProps={{ blur: 4, backgroundOpacity: 0.45 }}
+      >
+        <Stack gap="lg">
+          <Card withBorder radius="md" p="md" className="bg-green-50 border-green-200">
+            <Group justify="space-between">
+              <Text fw={700} c="dimmed">Đơn hàng #{selectedOrderId}</Text>
+              <Text fw={900} size="xl" c="green.8">{VND(selectedOrderAmount)}</Text>
+            </Group>
+          </Card>
+
+          <Divider label="Chọn phương thức thanh toán" labelPosition="center" />
+
+          <Radio.Group value={paymentMethod} onChange={setPaymentMethod}>
+            <Stack gap="sm">
+              <Radio
+                value="cash"
+                label={
+                  <Group gap="xs">
+                    <IconCash size={18} className="text-green-600" />
+                    <div>
+                      <Text fw={700}>Tiền mặt</Text>
+                      <Text size="xs" c="dimmed">Khách trả tiền mặt trực tiếp</Text>
+                    </div>
+                  </Group>
+                }
+                styles={{
+                  radio: { cursor: 'pointer' },
+                  label: {
+                    cursor: 'pointer',
+                    padding: '12px 16px',
+                    border: paymentMethod === 'cash' ? '2px solid #22c55e' : '2px solid #e2e8f0',
+                    borderRadius: '10px',
+                    background: paymentMethod === 'cash' ? '#f0fdf4' : 'white',
+                  }
+                }}
+              />
+              <Radio
+                value="transfer"
+                label={
+                  <Group gap="xs">
+                    <IconBuildingBank size={18} className="text-blue-600" />
+                    <div>
+                      <Text fw={700}>Chuyển khoản</Text>
+                      <Text size="xs" c="dimmed">Thanh toán qua ngân hàng / QR</Text>
+                    </div>
+                  </Group>
+                }
+                styles={{
+                  radio: { cursor: 'pointer' },
+                  label: {
+                    cursor: 'pointer',
+                    padding: '12px 16px',
+                    border: paymentMethod === 'transfer' ? '2px solid #3b82f6' : '2px solid #e2e8f0',
+                    borderRadius: '10px',
+                    background: paymentMethod === 'transfer' ? '#eff6ff' : 'white',
+                  }
+                }}
+              />
+            </Stack>
+          </Radio.Group>
+
+          <Group grow>
+            <Button variant="light" color="gray" onClick={closePayModal} radius="md">
+              Huỷ
+            </Button>
+            <Button
+              color="green"
+              radius="md"
+              loading={updateStatus.isPending}
+              onClick={handleConfirmPayment}
+              leftSection={<IconCash size={16} />}
+            >
+              Xác nhận Thanh toán
+            </Button>
+          </Group>
+        </Stack>
+      </Modal>
+
+      {/* ===== Modal nhập lý do huỷ đơn ===== */}
+      <Modal
+        opened={cancelModalOpened}
+        onClose={closeCancelModal}
+        title={
+          <Group gap="xs">
+            <IconAlertTriangle size={20} className="text-red-500" />
+            <Text fw={900} size="lg" c="red.7">Huỷ Đơn Hàng #{cancelOrderId}</Text>
+          </Group>
+        }
+        centered
+        radius="lg"
+        size="sm"
+        overlayProps={{ blur: 4, backgroundOpacity: 0.45 }}
+      >
+        <Stack gap="lg">
+          <Card withBorder radius="md" p="md" className="bg-red-50 border-red-200">
+            <Text size="sm" c="red.7" fw={600}>
+              ⚠️ Hành động này không thể hoàn tác. Đơn hàng sẽ bị huỷ và bàn sẽ được giải phóng.
+            </Text>
+          </Card>
+
+          <Textarea
+            label="Lý do huỷ đơn"
+            placeholder="Ví dụ: Khách đổi ý, hết nguyên liệu, nhập nhầm món..."
+            value={cancelReason}
+            onChange={e => setCancelReason(e.currentTarget.value)}
+            radius="md"
+            minRows={3}
+            autosize
+            description="Không bắt buộc nhưng khuyến khích ghi rõ lý do"
+          />
+
+          <Group grow>
+            <Button variant="light" color="gray" onClick={closeCancelModal} radius="md">
+              Quay lại
+            </Button>
+            <Button
+              color="red"
+              radius="md"
+              loading={updateStatus.isPending}
+              onClick={handleConfirmCancel}
+              leftSection={<IconCircleX size={16} />}
+            >
+              Xác nhận Huỷ đơn
+            </Button>
+          </Group>
+        </Stack>
+      </Modal>
     </Stack>
   );
 }

@@ -21,6 +21,9 @@ const beVietnam = Be_Vietnam_Pro({
 export const metadata: Metadata = {
   title: 'IUH Admin Dashboard',
   description: 'Hệ thống Quản trị Nhà hàng Chuyên nghiệp',
+  icons: {
+    icon: '/logo-iuh.png',
+  },
 };
 
 const theme = createTheme({

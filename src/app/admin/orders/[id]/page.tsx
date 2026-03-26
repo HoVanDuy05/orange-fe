@@ -6,13 +6,13 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import https from '@/api/https';
 import {
   Title, Card, Text, Badge, Stack, Group, Button, SimpleGrid,
-  Box, Divider, Paper, Table, ScrollArea, ActionIcon, ThemeIcon, Timeline
+  Box, Divider, Paper, Table, ScrollArea, ActionIcon, ThemeIcon, Timeline, Textarea
 } from '@mantine/core';
 import {
   IconArrowLeft, IconTrash, IconClock, IconCircleCheck, 
   IconChefHat, IconPackage, IconCash, IconCircleX, 
   IconShoppingCart, IconMapPin, IconCalendar, IconNote,
-  IconToolsKitchen2, IconHistory, IconUser, IconPhone
+  IconToolsKitchen2, IconHistory, IconUser, IconPhone, IconAlertTriangle
 } from '@tabler/icons-react';
 import { notifications } from '@mantine/notifications';
 import { modals } from '@mantine/modals';
@@ -50,8 +50,8 @@ export default function OrderDetailPage() {
   });
 
   const updateStatusMutation = useMutation({
-    mutationFn: ({ status, payment_method }: { status: string; payment_method?: string }) => 
-      https.patch(`/orders/${id}/status`, { status, payment_method }),
+    mutationFn: ({ status, payment_method, cancel_reason }: { status: string; payment_method?: string; cancel_reason?: string }) => 
+      https.patch(`/orders/${id}/status`, { status, payment_method, cancel_reason }),
     onSuccess: (_, { status }) => {
       queryClient.invalidateQueries({ queryKey: ['order-detail', id] });
       queryClient.invalidateQueries({ queryKey: ['orders'] });
@@ -113,9 +113,16 @@ export default function OrderDetailPage() {
             </Title>
           </Stack>
         </Group>
-        <Badge size="xl" color={cfg.color} variant="filled" leftSection={<StatusIcon size={16} stroke={2.5} />} radius="md">
-          {cfg.label}
-        </Badge>
+        <Stack align="flex-end" gap={4}>
+          <Badge size="xl" color={cfg.color} variant="filled" leftSection={<StatusIcon size={16} stroke={2.5} />} radius="md">
+            {cfg.label}
+          </Badge>
+          {order.order_status === 'cancelled' && order.cancel_reason && (
+            <Text size="xs" c="red.6" fw={600} maw={300} ta="right">
+              Lý do: {order.cancel_reason}
+            </Text>
+          )}
+        </Stack>
       </Group>
 
       <SimpleGrid cols={{ base: 1, md: 3 }} spacing="xl">
@@ -326,13 +333,41 @@ export default function OrderDetailPage() {
                   radius="md"
                   leftSection={<IconCircleX size={18} />}
                   loading={updateStatusMutation.isPending}
-                  onClick={() => modals.openConfirmModal({
-                    title: 'Huỷ đơn hàng',
-                    children: <Text size="sm">Bạn có chắc muốn huỷ đơn hàng #{order.id}? Khách sẽ không thể thanh toán đơn này.</Text>,
-                    labels: { confirm: 'Đồng ý Huỷ', cancel: 'Bỏ qua' },
-                    confirmProps: { color: 'red' },
-                    onConfirm: () => updateStatusMutation.mutate({ status: 'cancelled' })
-                  })}
+                  onClick={() => {
+                    let reason = '';
+                    modals.open({
+                      title: (
+                        <Group gap="xs">
+                          <IconAlertTriangle size={20} className="text-red-500" />
+                          <Text fw={900}>Xác nhận Huỷ Đơn Hàng</Text>
+                        </Group>
+                      ),
+                      radius: 'md',
+                      children: (
+                        <Stack gap="md" p="sm">
+                          <Text size="sm">Bạn có chắc muốn huỷ đơn hàng #{order.id}? Khách sẽ không thể thanh toán đơn này.</Text>
+                          <Textarea
+                            label="Lý do huỷ (không bắt buộc)"
+                            placeholder="Khách đổi ý, hết món, nhầm bàn..."
+                            minRows={3}
+                            onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => { reason = e.currentTarget.value; }}
+                          />
+                          <Group grow mt="md">
+                            <Button variant="light" color="gray" onClick={() => modals.closeAll()}>Bỏ qua</Button>
+                            <Button 
+                              color="red" 
+                              onClick={() => {
+                                updateStatusMutation.mutate({ status: 'cancelled', cancel_reason: reason || undefined });
+                                modals.closeAll();
+                              }}
+                            >
+                              Đồng ý Huỷ
+                            </Button>
+                          </Group>
+                        </Stack>
+                      )
+                    });
+                  }}
                 >
                   Huỷ đơn hàng
                 </Button>
@@ -365,6 +400,11 @@ export default function OrderDetailPage() {
                       <Text size="xs" fw={700} c="dimmed" mt={4}>
                         {order.payment_method === 'cash' ? 'Bằng tiền mặt' : 'Bằng chuyển khoản'}
                       </Text>
+                    )}
+                    {s === 'cancelled' && order.order_status === 'cancelled' && order.cancel_reason && (
+                      <Paper withBorder p="xs" radius="sm" mt={4} className="bg-red-50 border-red-100">
+                        <Text size="xs" c="red.7" fw={600}>Lý do: {order.cancel_reason}</Text>
+                      </Paper>
                     )}
                   </Timeline.Item>
                 );
