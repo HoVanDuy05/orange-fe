@@ -7,7 +7,7 @@ import {
   Title, Text, Stack, Group, Card, Badge, Button, TextInput,
   NumberInput, Select, ActionIcon, Divider, ScrollArea, Box,
   Image, Center, Textarea, Paper, SimpleGrid, UnstyledButton,
-  ThemeIcon, Indicator, rem, SegmentedControl, Loader
+  ThemeIcon, Indicator, rem, SegmentedControl, Loader, Modal
 } from '@mantine/core';
 import {
   Search, ShoppingCart, Plus, Minus, Trash2, ChefHat,
@@ -44,6 +44,10 @@ export default function POSPage() {
   const [customerName, setCustomerName] = useState('');
   const [customerPhone, setCustomerPhone] = useState('');
   const [note, setNote] = useState('');
+
+  // Payment UI
+  const [paymentModalOpen, setPaymentModalOpen] = useState(false);
+  const [selectedPayment, setSelectedPayment] = useState<string>('cash');
 
   // Fetching
   const { data: categories = [], isLoading: catLoading } = useQuery({
@@ -123,6 +127,8 @@ export default function POSPage() {
         customer_name: customerName || null,
         customer_phone: customerPhone || null,
         note: note || null,
+        status: 'paid',
+        payment_method: selectedPayment,
         items: cart.map(i => ({
           product_id: i.product_id,
           quantity: i.quantity,
@@ -143,6 +149,7 @@ export default function POSPage() {
       setCustomerName('');
       setCustomerPhone('');
       setNote('');
+      setPaymentModalOpen(false);
     },
     onError: (err: any) => {
       notifications.show({
@@ -501,23 +508,62 @@ export default function POSPage() {
                 gradient={{ from: 'blue', to: 'cyan' }}
                 leftSection={<CheckCircle2 size={18} />}
                 disabled={cart.length === 0 || (orderType === 'dine-in' && !tableId)}
-                loading={createOrder.isPending}
-                onClick={() => createOrder.mutate()}
+                onClick={() => setPaymentModalOpen(true)}
                 className="shadow-md"
               >
-                {cart.length === 0 ? 'Chọn món trước' : `Xác nhận đơn · ${VND(cartTotal)}`}
+                {cart.length === 0 ? 'Chọn món trước' : `Thanh toán · ${VND(cartTotal)}`}
               </Button>
 
               {cart.length > 0 && (
                 <Text size="xs" c="dimmed" ta="center">
                   <Receipt size={12} style={{ display: 'inline', marginRight: 4 }} />
-                  Đơn sẽ được gửi bếp ngay lập tức
+                  Đơn sẽ được báo bếp ngay sau khi thanh toán
                 </Text>
               )}
             </Stack>
           </Box>
         </Box>
       </Box>
+
+      {/* Payment Modal */}
+      <Modal 
+        opened={paymentModalOpen} 
+        onClose={() => setPaymentModalOpen(false)} 
+        title={<Text fw={900} size="lg" className="text-slate-800">Xác Nhận Thanh Toán</Text>}
+        centered
+        overlayProps={{ blur: 3 }}
+      >
+        <Stack>
+          <Text size="sm" c="dimmed">
+            Khách hàng phải thanh toán <Text span fw={800} c="blue">{VND(cartTotal)}</Text> cho đơn hàng này. Vui lòng chọn phương thức:
+          </Text>
+          <SegmentedControl
+            data={[
+              { label: 'Tiền mặt', value: 'cash' },
+              { label: 'Chuyển khoản (Momo/ZaloPay)', value: 'transfer' },
+            ]}
+            value={selectedPayment}
+            onChange={setSelectedPayment}
+            fullWidth
+            color="blue"
+            size="md"
+            radius="md"
+          />
+          <Group grow mt="md">
+            <Button variant="default" size="md" radius="md" onClick={() => setPaymentModalOpen(false)}>Thoát</Button>
+            <Button 
+              size="md"
+              radius="md"
+              loading={createOrder.isPending} 
+              color="blue" 
+              onClick={() => createOrder.mutate()}
+            >
+              Xác nhận & In bill
+            </Button>
+          </Group>
+        </Stack>
+      </Modal>
+
     </Box>
   );
 }
