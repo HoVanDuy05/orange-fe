@@ -529,36 +529,106 @@ export default function POSPage() {
       <Modal 
         opened={paymentModalOpen} 
         onClose={() => setPaymentModalOpen(false)} 
-        title={<Text fw={900} size="lg" className="text-slate-800">Xác Nhận Thanh Toán</Text>}
+        title={
+          <Group gap="xs">
+            <ThemeIcon size={32} radius="md" variant="light" color="blue">
+              <CreditCard size={18} />
+            </ThemeIcon>
+            <Text fw={900} size="lg" className="text-slate-800">Thanh Toán Đơn Hàng</Text>
+          </Group>
+        }
         centered
-        overlayProps={{ blur: 3 }}
+        zIndex={1000}
+        overlayProps={{ blur: 4, color: '#0f172a', opacity: 0.55 }}
+        radius="xl"
+        size="md"
+        padding="xl"
       >
-        <Stack>
-          <Text size="sm" c="dimmed">
-            Khách hàng phải thanh toán <Text span fw={800} c="blue">{VND(cartTotal)}</Text> cho đơn hàng này. Vui lòng chọn phương thức:
-          </Text>
-          <SegmentedControl
-            data={[
-              { label: 'Tiền mặt', value: 'cash' },
-              { label: 'Chuyển khoản (Momo/ZaloPay)', value: 'transfer' },
-            ]}
-            value={selectedPayment}
-            onChange={setSelectedPayment}
-            fullWidth
-            color="blue"
-            size="md"
-            radius="md"
-          />
-          <Group grow mt="md">
-            <Button variant="default" size="md" radius="md" onClick={() => setPaymentModalOpen(false)}>Thoát</Button>
+        <Stack gap="xl" mt="sm">
+          {/* Total Amount Box */}
+          <Paper p="md" radius="md" bg="blue.0" className="border border-blue-100">
+            <Stack gap={4} align="center">
+              <Text c="blue.7" fw={600} size="sm">Số tiền cần thu</Text>
+              <Text fw={900} size="36px" c="blue.9" style={{ lineHeight: 1 }}>{VND(cartTotal)}</Text>
+            </Stack>
+          </Paper>
+
+          {/* Payment Method Cards */}
+          <Stack gap="xs">
+            <Text size="sm" fw={700} className="text-slate-700">Hình thức thanh toán:</Text>
+            <SimpleGrid cols={2} spacing="sm">
+              {/* Cash Button */}
+              <UnstyledButton
+                onClick={() => setSelectedPayment('cash')}
+                className={`p-4 rounded-xl border-2 transition-all ${
+                  selectedPayment === 'cash' 
+                    ? 'border-blue-500 bg-blue-50 shadow-md shadow-blue-500/10' 
+                    : 'border-slate-200 hover:border-blue-200 bg-white hover:bg-slate-50'
+                }`}
+              >
+                <Stack align="center" gap="sm">
+                  <ThemeIcon 
+                    size={48} 
+                    radius="xl" 
+                    variant={selectedPayment === 'cash' ? 'filled' : 'light'} 
+                    color={selectedPayment === 'cash' ? 'blue' : 'gray'}
+                  >
+                    <Receipt size={24} />
+                  </ThemeIcon>
+                  <Text ta="center" fw={selectedPayment === 'cash' ? 800 : 600} size="sm" c={selectedPayment === 'cash' ? 'blue.9' : 'slate.7'}>
+                    Tiền mặt
+                  </Text>
+                </Stack>
+              </UnstyledButton>
+
+              {/* Transfer Button */}
+              <UnstyledButton
+                onClick={() => setSelectedPayment('transfer')}
+                className={`p-4 rounded-xl border-2 transition-all ${
+                  selectedPayment === 'transfer' 
+                    ? 'border-blue-500 bg-blue-50 shadow-md shadow-blue-500/10' 
+                    : 'border-slate-200 hover:border-blue-200 bg-white hover:bg-slate-50'
+                }`}
+              >
+                <Stack align="center" gap="sm">
+                  <ThemeIcon 
+                    size={48} 
+                    radius="xl" 
+                    variant={selectedPayment === 'transfer' ? 'filled' : 'light'} 
+                    color={selectedPayment === 'transfer' ? 'blue' : 'gray'}
+                  >
+                    <CreditCard size={24} />
+                  </ThemeIcon>
+                  <Text ta="center" fw={selectedPayment === 'transfer' ? 800 : 600} size="sm" c={selectedPayment === 'transfer' ? 'blue.9' : 'slate.7'}>
+                    Chuyển khoản (Ví)
+                  </Text>
+                </Stack>
+              </UnstyledButton>
+            </SimpleGrid>
+          </Stack>
+
+          {/* Actions */}
+          <Group grow mt="xs">
             <Button 
-              size="md"
+              variant="default" 
+              size="lg" 
+              radius="md" 
+              onClick={() => setPaymentModalOpen(false)}
+              fw={600}
+            >
+              Hủy
+            </Button>
+            <Button 
+              size="lg"
               radius="md"
               loading={createOrder.isPending} 
-              color="blue" 
+              color="blue"
               onClick={() => createOrder.mutate()}
+              leftSection={<CheckCircle2 size={20} />}
+              className="shadow-lg shadow-blue-500/30"
+              fw={800}
             >
-              Xác nhận & In bill
+              Lưu & In Bill
             </Button>
           </Group>
         </Stack>
