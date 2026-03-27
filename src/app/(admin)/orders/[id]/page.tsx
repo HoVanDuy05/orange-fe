@@ -336,17 +336,17 @@ export default function OrderDetailPage() {
                   Xác nhận: {nextCfg.label}
                 </Button>
               ) : (
-                <Paper withBorder p="md" radius="md" className={order.order_status === 'paid' ? "bg-green-50 border-green-100" : "bg-red-50 border-red-100"}>
+                <Paper withBorder p="md" radius="md" className={order.order_status === 'done' ? "bg-green-50 border-green-100" : order.order_status === 'paid' ? "bg-teal-50 border-teal-100" : "bg-red-50 border-red-100"}>
                   <Stack gap={8}>
                     <Group gap="xs">
-                      {order.order_status === 'paid' ? <IconCircleCheck size={20} className="text-green-600" /> : <IconCircleX size={20} className="text-red-600" />}
-                      <Text fw={900} c={order.order_status === 'paid' ? "green.8" : "red.8"}>
-                        {order.order_status === 'paid' ? 'Đã thanh toán thành công' : 'Đơn hàng đã được huỷ'}
+                      {order.order_status === 'done' ? <IconPackage size={20} className="text-green-600" /> : order.order_status === 'paid' ? <IconCircleCheck size={20} className="text-teal-600" /> : <IconCircleX size={20} className="text-red-600" />}
+                      <Text fw={900} c={order.order_status === 'done' ? "green.8" : order.order_status === 'paid' ? "teal.8" : "red.8"}>
+                        {order.order_status === 'done' ? 'Đơn hàng đã hoàn tất (Đã ra món)' : order.order_status === 'paid' ? 'Đã thanh toán thành công' : 'Đơn hàng đã bị huỷ'}
                       </Text>
                     </Group>
-                    {order.order_status === 'paid' && order.payment_method && (
+                    {(order.order_status === 'paid' || order.order_status === 'done') && order.payment_method && (
                       <Group gap={6}>
-                        {order.payment_method === 'cash' ? <IconCash size={16} className="text-green-600" /> : <IconBuildingBank size={16} className="text-blue-600" />}
+                        {order.payment_method === 'cash' ? <IconCash size={16} className="text-teal-600" /> : <IconBuildingBank size={16} className="text-blue-600" />}
                         <Text size="sm" fw={700} c="dimmed">
                           {order.payment_method === 'cash' ? 'Khách trả tiền mặt' : 'Khách chuyển khoản / QR'}
                         </Text>
@@ -363,7 +363,7 @@ export default function OrderDetailPage() {
                   </Stack>
                 </Paper>
               )}
-              {order.order_status !== 'cancelled' && order.order_status !== 'paid' && (
+              {order.order_status !== 'cancelled' && order.order_status !== 'paid' && order.order_status !== 'done' && (
                 <Button
                   fullWidth
                   color="red"
