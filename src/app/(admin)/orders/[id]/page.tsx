@@ -65,15 +65,6 @@ export default function OrderDetailPage() {
     }
   });
 
-  const deleteMutation = useMutation({
-    mutationFn: () => https.delete(`/orders/${id}`),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['orders'] });
-      notifications.show({ title: 'Đã xoá', message: 'Đơn hàng đã bị gỡ bỏ', color: 'orange' });
-      router.push('/orders');
-    }
-  });
-
   const getNextStatus = (current: string) => {
     const idx = STATUS_FLOW.indexOf(current);
     return idx >= 0 && idx < STATUS_FLOW.length - 1 ? STATUS_FLOW[idx + 1] : null;
@@ -107,7 +98,7 @@ export default function OrderDetailPage() {
             <IconArrowLeft size={22} />
           </ActionIcon>
           <Stack gap={2}>
-            <Text size="xs" c="dimmed" fw={700} tt="uppercase">Mã đơn #{order.id}</Text>
+            <Text size="xs" c="dimmed" fw={700} tt="uppercase">Mã đơn IUH-{dayjs(order.created_at).format('DDMMYYYY')}-{order.id}</Text>
             <Title order={1} className="text-slate-800 text-3xl font-black">
               Chi tiết Đơn hàng
             </Title>
@@ -452,22 +443,6 @@ export default function OrderDetailPage() {
             </Timeline>
           </Card>
 
-          {/* Delete (Danger Zone) */}
-          <Button
-            variant="subtle"
-            color="red"
-            size="xs"
-            leftSection={<IconTrash size={14} />}
-            onClick={() => modals.openConfirmModal({
-              title: 'Xoá vĩnh viễn đơn hàng',
-              children: <Text size="sm">Hành động này sẽ xóa sạch dữ liệu đơn #{order.id} khỏi hệ thống. Bạn có chắc không?</Text>,
-              labels: { confirm: 'Xoá vĩnh viễn', cancel: 'Hủy' },
-              confirmProps: { color: 'red' },
-              onConfirm: () => deleteMutation.mutate()
-            })}
-          >
-            Xoá vĩnh viễn đơn
-          </Button>
         </Stack>
       </SimpleGrid>
     </Stack>

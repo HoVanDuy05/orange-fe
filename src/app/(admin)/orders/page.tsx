@@ -239,7 +239,7 @@ export default function OrdersPage() {
                   return (
                     <Table.Tr key={order.id} className={isDone || isCancelled ? 'opacity-60 bg-slate-50' : ''}>
                       <Table.Td ta="center">
-                        <Text fw={800} c="blue">#{order.id}</Text>
+                        <Text fw={800} c="blue">IUH-{dayjs(order.created_at).format('DDMMYYYY')}-{order.id}</Text>
                       </Table.Td>
                       <Table.Td ta="center">
                         <Badge
