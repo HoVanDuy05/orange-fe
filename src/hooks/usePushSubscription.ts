@@ -1,7 +1,7 @@
 import { useEffect } from 'react';
 import https from '@/api/https';
 
-const VAPID_PUBLIC_KEY = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY || '';
+const VAPID_PUBLIC_KEY = 'BKhMChl9eK8G1Ax7_eQyS8p1BVfogCzPAfi98I5w2Gs9R7KGrf_42omoVd4sA_IgAAm2qbMQp60sFPz1ZppNTLQ';
 
 function urlBase64ToUint8Array(base64String: string) {
   const padding = '='.repeat((4 - base64String.length % 4) % 4);
