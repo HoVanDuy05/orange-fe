@@ -150,7 +150,13 @@ export default function OrdersPage() {
           <Paper withBorder radius="md" px="lg" py="xs" className="bg-blue-50 border-blue-100">
             <Group gap="xs">
               <IconShoppingCart size={16} className="text-blue-600" />
-              <Text fw={800} c="blue">{orders.length} đơn</Text>
+              <Text fw={800} c="blue">{orders.length} đơn tổng hợp</Text>
+            </Group>
+          </Paper>
+          <Paper withBorder radius="md" px="lg" py="xs" className="bg-teal-50 border-teal-100">
+            <Group gap="xs">
+              <IconCircleCheck size={16} className="text-teal-600" />
+              <Text fw={800} c="teal">{orders.filter(o => o.order_status === 'done').length} đơn thành công</Text>
             </Group>
           </Paper>
           {pendingCount > 0 && (

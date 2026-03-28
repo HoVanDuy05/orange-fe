@@ -32,6 +32,7 @@ export default function DashboardPage() {
   // Calculate totals
   const totalRev = financialData.reduce((acc: number, d: any) => acc + d.revenue, 0);
   const totalCost = financialData.reduce((acc: number, d: any) => acc + d.cost, 0);
+  const totalSuccessOrders = financialData.reduce((acc: number, d: any) => acc + (d.success_orders || 0), 0);
   const totalProfit = totalRev - totalCost;
 
   return (
@@ -69,7 +70,7 @@ export default function DashboardPage() {
       </Group>
 
       {/* Main Stats Cards */}
-      <SimpleGrid cols={{ base: 1, sm: 3 }} spacing="lg">
+      <SimpleGrid cols={{ base: 1, sm: 2, md: 4 }} spacing="lg">
         <Card withBorder radius="lg" shadow="sm" p="lg" className="border-l-4 border-l-blue-500 bg-white">
           <Group justify="space-between" mb="xs">
             <Text size="sm" fw={700} c="dimmed" tt="uppercase">Tổng Doanh Thu</Text>
@@ -78,13 +79,24 @@ export default function DashboardPage() {
           <Title order={2} className="text-blue-900">
             {new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(totalRev)}
           </Title>
-          <Text size="xs" c="green" mt="sm" fw={600}>Khách mua hàng thực tế</Text>
+          <Text size="xs" c="green" mt="sm" fw={600}>Chỉ tính đơn đã hoàn tất (Done)</Text>
+        </Card>
+
+        <Card withBorder radius="lg" shadow="sm" p="lg" className="border-l-4 border-l-teal-500 bg-white">
+          <Group justify="space-between" mb="xs">
+            <Text size="sm" fw={700} c="dimmed" tt="uppercase">Đơn Thành Công</Text>
+            <ShoppingCart size={20} className="text-teal-500" />
+          </Group>
+          <Title order={2} className="text-teal-900">
+            {totalSuccessOrders.toLocaleString()} đơn
+          </Title>
+          <Text size="xs" c="teal" mt="sm" fw={600}>Trạng thái đơn hàng: Done</Text>
         </Card>
 
         <Card withBorder radius="lg" shadow="sm" p="lg" className="border-l-4 border-l-orange-500 bg-white">
           <Group justify="space-between" mb="xs">
             <Text size="sm" fw={700} c="dimmed" tt="uppercase">Tổng Vốn (Chi phí)</Text>
-            <ShoppingCart size={20} className="text-orange-500" />
+            <RefreshCcw size={20} className="text-orange-500" />
           </Group>
           <Title order={2} className="text-orange-900">
             {new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(totalCost)}
@@ -92,12 +104,12 @@ export default function DashboardPage() {
           <Text size="xs" c="orange" mt="sm" fw={600}>Dựa trên phiếu nhập kho</Text>
         </Card>
 
-        <Card withBorder radius="lg" shadow="sm" p="lg" className="border-l-4 border-l-teal-500 bg-white">
+        <Card withBorder radius="lg" shadow="sm" p="lg" className="border-l-4 border-l-indigo-500 bg-white">
           <Group justify="space-between" mb="xs">
             <Text size="sm" fw={700} c="dimmed" tt="uppercase">Lợi Nhuận Ròng</Text>
-            <Wallet size={20} className="text-teal-500" />
+            <Wallet size={20} className="text-indigo-500" />
           </Group>
-          <Title order={2} className="text-teal-900">
+          <Title order={2} className="text-indigo-900">
             {new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(totalProfit)}
           </Title>
           <ProgressCircle value={totalRev > 0 ? (totalProfit/totalRev)*100 : 0} />
