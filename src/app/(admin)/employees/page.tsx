@@ -11,6 +11,7 @@ import { SectionLoader } from '@/components/common/GlobalLoading';
 import { PageHeader } from '@/components/admin/ui/PageHeader';
 import { ActionButton } from '@/components/common/ActionButton';
 import { DynamicTable } from '@/components/common/DynamicTable';
+import { AppTitle } from '@/components/common/AppTitle';
 
 export default function EmployeesPage() {
   const {
@@ -119,7 +120,7 @@ export default function EmployeesPage() {
 
           <Tabs.Panel value="staff">
             <Group justify="space-between" mb="md">
-               <Text fw={800} size="lg" c="gray.9">Tài khoản nhân viên</Text>
+               <AppTitle level={3}>Tài khoản nhân viên</AppTitle>
                <ActionButton type="add" label="Thêm nhân sự" variant="filled" />
             </Group>
             <DynamicTable columns={employeeColumns as any} data={employees} loading={isLoading} />
@@ -127,7 +128,7 @@ export default function EmployeesPage() {
 
           <Tabs.Panel value="branches">
             <Group justify="space-between" mb="md">
-               <Text fw={800} size="lg" c="gray.9">Chi nhánh hoạt động</Text>
+               <AppTitle level={3}>Chi nhánh hoạt động</AppTitle>
                <ActionButton type="add" label="Thêm chi nhánh" variant="filled" />
             </Group>
             <DynamicTable columns={branchColumns as any} data={branches} loading={isLoading} />

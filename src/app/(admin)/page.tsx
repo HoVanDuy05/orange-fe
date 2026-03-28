@@ -6,6 +6,8 @@ import {
   Box, ActionIcon, Center, Button
 } from '@mantine/core';
 import { AreaChart, DonutChart } from '@mantine/charts';
+import { AppTitle } from '@/components/common/AppTitle';
+import { useBrandTheme } from '@/providers/BrandThemeProvider';
 import {
   Banknote, Wallet, RefreshCcw,
   Package, Bike, Coffee, Download, TrendingUp, ShoppingCart,
@@ -23,6 +25,7 @@ import { StatCard, ChannelBar } from '@/components/admin/dashboard/DashboardElem
 import { PageHeader } from '@/components/admin/ui/PageHeader';
 
 export default function DashboardPage() {
+  const { activeTheme } = useBrandTheme();
   const {
     reportType,
     setReportType,
@@ -47,7 +50,7 @@ export default function DashboardPage() {
   return (
     <Stack gap="xl">
       <PageHeader
-        title="Orange Dashboard"
+        title={`${activeTheme?.brand_name || 'Orange'} Dashboard`}
         description="Báo cáo trực tiếp tình hình kinh doanh hôm nay và các kỳ thống kê"
         actions={
           <Group gap="sm">
@@ -127,7 +130,7 @@ export default function DashboardPage() {
           <Card withBorder radius="xl" shadow="xs" p="xl" style={{ background: 'white' }}>
             <Group justify="space-between" mb="lg">
               <div>
-                <Title order={4} fw={800} style={{ color: '#0F172A', fontSize: '18px' }}>Xử lý xu hướng</Title>
+                <AppTitle level={4}>Xử lý xu hướng</AppTitle>
                 <Text size="xs" c="dimmed" fw={600}>Doanh thu chi tiết theo thời gian</Text>
               </div>
               <Badge color="brand" variant="light" size="lg" radius="md" fw={700}>

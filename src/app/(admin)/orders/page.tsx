@@ -24,6 +24,7 @@ import { PageHeader } from '@/components/admin/ui/PageHeader';
 import { ServiceDataTable } from '@/components/admin/ui/ServiceDataTable';
 import { StatusBadge } from '@/components/admin/ui/StatusBadge';
 import { SectionLoader } from '@/components/common/GlobalLoading';
+import { AppTitle } from '@/components/common/AppTitle';
 import Link from 'next/link';
 
 export default function OrdersPage() {
@@ -159,7 +160,7 @@ export default function OrdersPage() {
             <Table.Td>
               <Group gap="xs" wrap="nowrap">
                 <Tooltip label="Xem chi tiết">
-                  <ActionIcon variant="light" color="blue" radius="md" component={Link} href={`/orders/${order.id}`}>
+                  <ActionIcon variant="light" color="brand" radius="md" component={Link} href={`/orders/${order.id}`}>
                     <Eye size={16} />
                   </ActionIcon>
                 </Tooltip>
@@ -167,7 +168,7 @@ export default function OrdersPage() {
                 {!['completed', 'cancelled'].includes(order.order_status) && (
                   <>
                     {order.order_status === 'pending' && (
-                      <Button size="xs" radius="md" color="blue" onClick={() => updateStatus.mutate({ id: order.id, status: 'confirmed' })}>Xác nhận</Button>
+                      <Button size="xs" radius="md" color="brand" onClick={() => updateStatus.mutate({ id: order.id, status: 'confirmed' })}>Xác nhận</Button>
                     )}
                     {order.order_status === 'confirmed' && (
                       <Button size="xs" radius="md" color="brand" onClick={() => updateStatus.mutate({ id: order.id, status: 'preparing' })}>Làm món</Button>
@@ -187,7 +188,7 @@ export default function OrdersPage() {
       />
 
       {/* ── Payment Modal ── */}
-      <Modal opened={payModalOpened} onClose={closePayModal} centered radius="24px" size="md" title={<Text fw={900} size="lg">Hoàn tất Thanh toán</Text>}>
+      <Modal opened={payModalOpened} onClose={closePayModal} centered radius="24px" size="md" title={<AppTitle level={3}>Hoàn tất Thanh toán</AppTitle>}>
         <Stack gap="xl" p="md">
           <Card withBorder radius="xl" p="xl" bg="brand.0" style={{ borderStyle: 'dashed', borderColor: 'var(--brand-primary)' }}>
             <Stack align="center" gap={4}>
@@ -221,13 +222,13 @@ export default function OrdersPage() {
                 onClick={() => setPaymentMethod('transfer')}
                 style={{
                   borderRadius: '24px',
-                  border: `2px solid ${paymentMethod === 'transfer' ? '#3B82F6' : '#E2E8F0'}`,
-                  background: paymentMethod === 'transfer' ? 'rgba(59,130,246,0.05)' : 'white',
+                  border: `2px solid ${paymentMethod === 'transfer' ? 'var(--brand-primary)' : '#E2E8F0'}`,
+                  background: paymentMethod === 'transfer' ? 'var(--brand-primary-soft)' : 'white',
                   transition: 'all 0.2s'
                 }}
               >
                 <Stack align="center" gap={8}>
-                  <ThemeIcon size="lg" radius="xl" color="blue" variant={paymentMethod === 'transfer' ? 'filled' : 'light'}><Building2 size={20} /></ThemeIcon>
+                  <ThemeIcon size="lg" radius="xl" color="brand" variant={paymentMethod === 'transfer' ? 'filled' : 'light'}><Building2 size={20} /></ThemeIcon>
                   <Text size="sm" fw={700}>Chuyển khoản</Text>
                 </Stack>
               </UnstyledButton>
@@ -241,7 +242,7 @@ export default function OrdersPage() {
       </Modal>
 
       {/* ── Cancel Modal ── */}
-      <Modal opened={cancelModalOpened} onClose={closeCancelModal} centered radius="24px" title={<Text fw={900}>Hủy đơn hàng</Text>}>
+      <Modal opened={cancelModalOpened} onClose={closeCancelModal} centered radius="24px" title={<AppTitle level={3}>Hủy đơn hàng</AppTitle>}>
         <Stack p="md" gap="lg">
           <Group gap="sm" p="sm" bg="red.0" style={{ borderRadius: 12 }}>
             <AlertTriangle color="#EF4444" size={20} />

@@ -1,7 +1,8 @@
 import React from 'react';
-import { Title, Text, Group, Breadcrumbs, Anchor, Stack, Box } from '@mantine/core';
+import { Text, Group, Breadcrumbs, Anchor, Stack, Box } from '@mantine/core';
 import { ChevronRight } from 'lucide-react';
 import Link from 'next/link';
+import { AppTitle } from '@/components/common/AppTitle';
 
 interface PageHeaderProps {
   title: string;
@@ -31,9 +32,9 @@ export const PageHeader = ({ title, description, actions, breadcrumbs }: PageHea
 
       <Group justify="space-between" align="flex-end" wrap="nowrap">
         <Box>
-          <Title order={2} style={{ color: '#0F172A', letterSpacing: '-0.04em', fontSize: '28px', lineHeight: 1.1 }}>
+          <AppTitle level={2}>
             {title}
-          </Title>
+          </AppTitle>
           {description && (
             <Text c="dimmed" size="sm" mt={4} fw={500}>
               {description}

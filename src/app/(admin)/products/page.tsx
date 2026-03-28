@@ -24,6 +24,7 @@ import MediaLibraryModal from '@/components/common/MediaLibraryModal';
 import { PageHeader } from '@/components/admin/ui/PageHeader';
 import { ServiceDataTable } from '@/components/admin/ui/ServiceDataTable';
 import { useBrandTheme } from '@/providers/BrandThemeProvider';
+import { AppTitle } from '@/components/common/AppTitle';
 
 
 
@@ -177,7 +178,7 @@ export default function ProductsPage() {
             />
           </Group>
           <Group gap="xs">
-            <Badge variant="dot" color="blue" size="lg" radius="md">{filteredProducts.length} món ăn</Badge>
+            <Badge variant="dot" color="brand" size="lg" radius="md">{filteredProducts.length} món ăn</Badge>
           </Group>
         </Group>
       </Card>
@@ -229,7 +230,7 @@ export default function ProductsPage() {
             <Table.Td>
               <Group gap="xs" wrap="nowrap" justify="center">
                  <Tooltip label="Chỉnh sửa">
-                   <ActionIcon variant="light" color="blue" radius="md" onClick={() => handleOpenEdit(p)}>
+                   <ActionIcon variant="light" color="brand" radius="md" onClick={() => handleOpenEdit(p)}>
                      <Edit size={16} />
                    </ActionIcon>
                  </Tooltip>

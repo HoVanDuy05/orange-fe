@@ -16,6 +16,7 @@ import { SectionLoader } from '@/components/common/GlobalLoading';
 // Reusable Components
 import { PageHeader } from '@/components/admin/ui/PageHeader';
 import { ServiceDataTable } from '@/components/admin/ui/ServiceDataTable';
+import { AppTitle } from '@/components/common/AppTitle';
 
 interface Category {
   id: number;
@@ -132,7 +133,7 @@ export default function CategoriesPage() {
             <Table.Td>
               <Group gap="xs" justify="center">
                 <Tooltip label="Chỉnh sửa">
-                  <ActionIcon variant="light" color="blue" radius="md" onClick={() => handleOpenEdit(c)}>
+                  <ActionIcon variant="light" color="brand" radius="md" onClick={() => handleOpenEdit(c)}>
                     <Edit size={16} />
                   </ActionIcon>
                 </Tooltip>
@@ -153,7 +154,7 @@ export default function CategoriesPage() {
         )}
       />
 
-      <Modal opened={opened} onClose={handleClose} centered radius="24px" title={<Text fw={900} className="uppercase">{editingCategory ? 'Sửa danh mục' : 'Thêm danh mục mới'}</Text>}>
+      <Modal opened={opened} onClose={handleClose} centered radius="24px" title={<AppTitle level={3}>{editingCategory ? 'Sửa danh mục' : 'Thêm danh mục mới'}</AppTitle>}>
         <form onSubmit={handleSubmit}>
           <Stack gap="lg" p="md">
             <TextInput
@@ -176,7 +177,7 @@ export default function CategoriesPage() {
             />
             <Group grow mt="md">
                <Button variant="subtle" color="gray" onClick={handleClose} radius="xl" fw={700}>Bỏ qua</Button>
-               <Button type="submit" color="orange" radius="xl" fw={900} h={48} loading={saveMutation.isPending} className="shadow-lg shadow-orange-100">
+               <Button type="submit" color="brand" radius="xl" fw={900} h={48} loading={saveMutation.isPending} className="shadow-lg">
                   Lưu danh mục
                </Button>
             </Group>

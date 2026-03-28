@@ -53,6 +53,21 @@ export const BrandThemeProvider = ({ children }: { children: ReactNode }) => {
       root.style.setProperty('--brand-secondary', activeTheme.secondary_color || '#FF8533');
       root.style.setProperty('--brand-font', activeTheme.font_family || 'Be Vietnam Pro');
       
+      // Update Title & Favicon
+      if (activeTheme.brand_name) {
+        document.title = `${activeTheme.brand_name} | Admin Dashboard`;
+      }
+      
+      if (activeTheme.logo_url) {
+        let favicon = document.querySelector('link[rel="icon"]') as HTMLLinkElement;
+        if (!favicon) {
+          favicon = document.createElement('link');
+          favicon.rel = 'icon';
+          document.head.appendChild(favicon);
+        }
+        favicon.href = activeTheme.logo_url;
+      }
+
       const metaThemeColor = document.querySelector('meta[name="theme-color"]');
       if (metaThemeColor) {
         metaThemeColor.setAttribute('content', primary);

@@ -18,7 +18,7 @@ interface BaseProps {
 }
 
 const actionConfigs: Record<ActionButtonType, { icon: any, color: string, defaultLabel: string }> = {
-  edit: { icon: Edit, color: 'blue', defaultLabel: 'Chỉnh sửa' },
+  edit: { icon: Edit, color: 'brand', defaultLabel: 'Chỉnh sửa' },
   delete: { icon: Trash2, color: 'red', defaultLabel: 'Xóa' },
   view: { icon: Eye, color: 'cyan', defaultLabel: 'Xem chi tiết' },
   confirm: { icon: Check, color: 'green', defaultLabel: 'Xác nhận' },
@@ -26,9 +26,9 @@ const actionConfigs: Record<ActionButtonType, { icon: any, color: string, defaul
   add: { icon: Plus, color: 'brand', defaultLabel: 'Thêm mới' },
   save: { icon: Save, color: 'brand', defaultLabel: 'Lưu thay đổi' },
   reset: { icon: RotateCcw, color: 'gray', defaultLabel: 'Làm mới' },
-  search: { icon: Search, color: 'blue', defaultLabel: 'Tìm kiếm' },
+  search: { icon: Search, color: 'brand', defaultLabel: 'Tìm kiếm' },
   external: { icon: ExternalLink, color: 'gray', defaultLabel: 'Mở trang mới' },
-  filter: { icon: Filter, color: 'blue', defaultLabel: 'Lọc dữ liệu' },
+  filter: { icon: Filter, color: 'brand', defaultLabel: 'Lọc dữ liệu' },
   back: { icon: ChevronLeft, color: 'gray', defaultLabel: 'Quay lại' },
   next: { icon: ChevronRight, color: 'gray', defaultLabel: 'Tiếp theo' },
 };

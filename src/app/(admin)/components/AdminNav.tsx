@@ -104,7 +104,10 @@ export default function AdminNav({ children }: { children: React.ReactNode }) {
           <Group gap="sm">
             <Burger opened={opened} onClick={toggle} hiddenFrom="sm" size="sm" color="#1E293B" />
             <Group gap="xs" align="center">
-              <img src={activeTheme?.logo_url || "/orange-logo.png"} alt="Logo" style={{ height: 36, width: 'auto', objectFit: 'contain' }} />
+              <img src={activeTheme?.logo_url || "/orange-logo.png"} alt="Logo" style={{ height: 44, width: 'auto', objectFit: 'contain' }} />
+              <Text fw={900} size="lg" visibleFrom="sm" style={{ color: primaryColor, letterSpacing: '-0.03em', lineHeight: 1 }}>
+                {activeTheme?.brand_name || 'Orange'}
+              </Text>
             </Group>
           </Group>
 

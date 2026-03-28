@@ -26,7 +26,7 @@ export const MediaGallery = ({ folder, selectedUrl, onSelect }: MediaGalleryProp
   const gallery = Array.isArray(rawData) ? rawData : (rawData?.data || []);
 
   if (isLoading) {
-    return <Center h={400}><Loader variant="bars" color="blue" /></Center>;
+    return <Center h={400}><Loader variant="bars" color="brand" /></Center>;
   }
 
   if (gallery.length === 0) {
@@ -48,12 +48,12 @@ export const MediaGallery = ({ folder, selectedUrl, onSelect }: MediaGalleryProp
           p="0"
           radius="lg"
           withBorder
-          className={`cursor-pointer transition-all relative aspect-square group overflow-hidden ${selectedUrl === img.url ? 'ring-4 ring-blue-500 border-blue-500 shadow-xl scale-[0.98]' : 'hover:border-blue-400 hover:shadow-md'}`}
+          className={`cursor-pointer transition-all relative aspect-square group overflow-hidden ${selectedUrl === img.url ? 'ring-4 ring-brand border-brand shadow-xl scale-[0.98]' : 'hover:border-brand-soft hover:shadow-md'}`}
           onClick={() => onSelect(img.url)}
         >
           <Image src={img.url} alt="media" className="object-cover w-full h-full group-hover:scale-110 transition-transform duration-700" />
           {selectedUrl === img.url && (
-            <Box className="absolute top-2 right-2 bg-blue-600 rounded-full p-1.5 text-white shadow-2xl z-10 animate-in zoom-in duration-300">
+            <Box className="absolute top-2 right-2 bg-brand rounded-full p-1.5 text-white shadow-2xl z-10 animate-in zoom-in duration-300">
               <Check size={16} strokeWidth={3} />
             </Box>
           )}

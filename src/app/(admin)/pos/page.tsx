@@ -9,6 +9,7 @@ import {
   Image, Center, Textarea, Paper, SimpleGrid, UnstyledButton,
   ThemeIcon, Indicator, rem, SegmentedControl, Loader, Modal
 } from '@mantine/core';
+import { AppTitle } from '@/components/common/AppTitle';
 import {
   Search, ShoppingCart, Plus, Minus, Trash2, ChefHat,
   Tag, Utensils, Receipt, CheckCircle2, X, User, StickyNote, ShoppingBag,
@@ -171,7 +172,7 @@ export default function POSPage() {
             <ChefHat size={22} />
           </ThemeIcon>
           <Stack gap={0}>
-            <Title order={3} className="text-slate-800">Gọi món cho Khách</Title>
+            <AppTitle level={3}>Gọi món cho Khách</AppTitle>
             <Text size="xs" c="dimmed">Chọn món → Thêm giỏ → Xác nhận đơn</Text>
           </Stack>
         </Group>
@@ -525,9 +526,9 @@ export default function POSPage() {
       </Box>
 
       {/* Payment Modal */}
-      <Modal 
-        opened={paymentModalOpen} 
-        onClose={() => setPaymentModalOpen(false)} 
+      <Modal
+        opened={paymentModalOpen}
+        onClose={() => setPaymentModalOpen(false)}
         title={
           <Group gap="xs">
             <ThemeIcon size={32} radius="md" variant="light" color="brand">
@@ -559,17 +560,16 @@ export default function POSPage() {
               {/* Cash Button */}
               <UnstyledButton
                 onClick={() => setSelectedPayment('cash')}
-                className={`p-4 rounded-xl border-2 transition-all ${
-                  selectedPayment === 'cash' 
-                    ? 'border-brand bg-brand-soft shadow-md' 
+                className={`p-4 rounded-xl border-2 transition-all ${selectedPayment === 'cash'
+                    ? 'border-brand bg-brand-soft shadow-md'
                     : 'border-slate-200 hover:border-brand bg-white hover:bg-slate-50'
-                }`}
+                  }`}
               >
                 <Stack align="center" gap="sm">
-                  <ThemeIcon 
-                    size={48} 
-                    radius="xl" 
-                    variant={selectedPayment === 'cash' ? 'filled' : 'light'} 
+                  <ThemeIcon
+                    size={48}
+                    radius="xl"
+                    variant={selectedPayment === 'cash' ? 'filled' : 'light'}
                     color={selectedPayment === 'cash' ? 'brand' : 'gray'}
                   >
                     <Receipt size={24} />
@@ -583,17 +583,16 @@ export default function POSPage() {
               {/* Transfer Button */}
               <UnstyledButton
                 onClick={() => setSelectedPayment('transfer')}
-                className={`p-4 rounded-xl border-2 transition-all ${
-                  selectedPayment === 'transfer' 
-                    ? 'border-brand bg-brand-soft shadow-md' 
+                className={`p-4 rounded-xl border-2 transition-all ${selectedPayment === 'transfer'
+                    ? 'border-brand bg-brand-soft shadow-md'
                     : 'border-slate-200 hover:border-brand bg-white hover:bg-slate-50'
-                }`}
+                  }`}
               >
                 <Stack align="center" gap="sm">
-                  <ThemeIcon 
-                    size={48} 
-                    radius="xl" 
-                    variant={selectedPayment === 'transfer' ? 'filled' : 'light'} 
+                  <ThemeIcon
+                    size={48}
+                    radius="xl"
+                    variant={selectedPayment === 'transfer' ? 'filled' : 'light'}
                     color={selectedPayment === 'transfer' ? 'brand' : 'gray'}
                   >
                     <CreditCard size={24} />
@@ -608,19 +607,19 @@ export default function POSPage() {
 
           {/* Actions */}
           <Group grow mt="xs">
-            <Button 
-              variant="default" 
-              size="lg" 
-              radius="md" 
+            <Button
+              variant="default"
+              size="lg"
+              radius="md"
               onClick={() => setPaymentModalOpen(false)}
               fw={600}
             >
               Hủy
             </Button>
-            <Button 
+            <Button
               size="lg"
               radius="md"
-              loading={createOrder.isPending} 
+              loading={createOrder.isPending}
               color="brand"
               onClick={() => createOrder.mutate()}
               leftSection={<CheckCircle2 size={20} />}

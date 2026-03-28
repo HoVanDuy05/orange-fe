@@ -8,6 +8,7 @@ import {
 import { Palette, CheckCircle } from 'lucide-react';
 import { useSystem } from '@/hooks/useSystem';
 import { SectionLoader } from '@/components/common/GlobalLoading';
+import { AppTitle } from '@/components/common/AppTitle';
 import { PageHeader } from '@/components/admin/ui/PageHeader';
 import MediaLibraryModal from '@/components/common/MediaLibraryModal';
 
@@ -40,14 +41,14 @@ export default function SystemPage() {
       <Card withBorder radius="xl" shadow="xs" p="xl" style={{ background: 'white' }}>
         <Tabs defaultValue="brand" color="brand" variant="pills" radius="xl">
           <Tabs.List mb="xl">
-            <Tabs.Tab value="brand" leftSection={<Palette size={16} />}>Cấu hình Thương hiệu</Tabs.Tab>
+            <Tabs.Tab value="brand" leftSection={<Image src={mainTheme.logo_url || '/orange-logo.png'} w={18} h={18} fit="contain" />}>Cấu hình Thương hiệu</Tabs.Tab>
             <Tabs.Tab value="colors" leftSection={<CheckCircle size={16} />}>Màu sắc Giao diện</Tabs.Tab>
           </Tabs.List>
 
           <Tabs.Panel value="brand">
             <Stack gap="xl">
               <Box>
-                <Title order={4} fw={800} mb={4}>Thông tin nhận diện chung</Title>
+                <AppTitle level={4} mb={4}>Thông tin nhận diện chung</AppTitle>
                 <Text size="sm" c="dimmed" mb="lg">Logo, tên thương hiệu và font chữ dùng chung cho App & Admin.</Text>
                 
                 <Paper withBorder radius="xl" p="xl" bg="gray.0" style={{ borderStyle: 'dashed' }}>
@@ -104,7 +105,7 @@ export default function SystemPage() {
           </Tabs.Panel>
 
           <Tabs.Panel value="colors">
-             <Title order={4} fw={800} mb={4}>Tùy chỉnh màu sắc riêng biệt</Title>
+             <AppTitle level={4} mb={4}>Tùy chỉnh màu sắc riêng biệt</AppTitle>
              <Text size="sm" c="dimmed" mb="lg">Phân tách đặc trưng màu sắc cho khu vực Quản trị và ứng dụng Khách hàng.</Text>
 
              <SimpleGrid cols={{ base: 1, sm: 2 }} spacing="xl">

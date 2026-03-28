@@ -26,7 +26,7 @@ export const ServiceDataTable = <T extends Record<string, any>>({
         border: '1px solid #E2E8F0'
       }}
     >
-      <LoadingOverlay visible={isLoading} overlayProps={{ radius: 'xl', blur: 2 }} loaderProps={{ color: 'orange' }} />
+      <LoadingOverlay visible={isLoading} overlayProps={{ radius: 'xl', blur: 2 }} loaderProps={{ color: 'brand' }} />
       <ScrollArea h={600} offsetScrollbars>
         <Table verticalSpacing="sm" horizontalSpacing="xl" highlightOnHover striped withColumnBorders={false}>
           <Table.Thead 

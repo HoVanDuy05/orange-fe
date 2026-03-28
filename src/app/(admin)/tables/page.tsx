@@ -19,6 +19,7 @@ import { SectionLoader } from '@/components/common/GlobalLoading';
 
 // Reusable Components
 import { PageHeader } from '@/components/admin/ui/PageHeader';
+import { AppTitle } from '@/components/common/AppTitle';
 
 interface DiningTable {
   id: number;
@@ -148,7 +149,7 @@ export default function TablesPage() {
 
                 <Group gap="xs" mt="xs">
                    <Tooltip label="Sửa tên">
-                     <ActionIcon variant="light" color="blue" radius="md" size="md" onClick={() => handleOpenEdit(t)}>
+                     <ActionIcon variant="light" color="brand" radius="md" size="md" onClick={() => handleOpenEdit(t)}>
                        <Edit size={16} />
                      </ActionIcon>
                    </Tooltip>
@@ -177,7 +178,7 @@ export default function TablesPage() {
       </SimpleGrid>
 
       {/* ── Table CRUD Modal ── */}
-      <Modal opened={opened} onClose={handleClose} centered radius="24px" title={<Text fw={900} className="uppercase">{editingTable ? 'Cập nhật bàn' : 'Thiết lập bàn mới'}</Text>}>
+      <Modal opened={opened} onClose={handleClose} centered radius="24px" title={<AppTitle level={3}>{editingTable ? 'Cập nhật bàn' : 'Thiết lập bàn mới'}</AppTitle>}>
         <form onSubmit={handleSubmit}>
           <Stack gap="lg" p="md">
             <TextInput 
@@ -193,7 +194,7 @@ export default function TablesPage() {
             
             <Group grow mt="md">
                <Button variant="subtle" color="gray" onClick={handleClose} radius="xl" fw={700}>Bỏ qua</Button>
-               <Button type="submit" color="orange" radius="xl" fw={900} h={48} loading={saveMutation.isPending}>
+               <Button type="submit" color="brand" radius="xl" fw={900} h={48} loading={saveMutation.isPending}>
                   Lưu thiết lập
                </Button>
             </Group>

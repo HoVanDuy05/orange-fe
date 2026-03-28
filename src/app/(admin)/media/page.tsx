@@ -8,6 +8,7 @@ import {
   ActionIcon, Badge, FileButton, Loader, Center, Paper, Tooltip, 
   Modal, Box, Title as MantineTitle, Tabs
 } from '@mantine/core';
+import { AppTitle } from '@/components/common/AppTitle';
 import { Upload, Trash2, Maximize2, ExternalLink, Image as ImageIcon, CheckCircle2, LayoutGrid, Package, Palette, UserCircle, Settings } from 'lucide-react';
 import { notifications } from '@mantine/notifications';
 import { modals } from '@mantine/modals';
@@ -74,7 +75,7 @@ export default function MediaLibraryPage() {
     <Stack gap="xl" p="md">
       <Group justify="space-between" align="center">
         <Stack gap={2}>
-           <Title order={1} className="text-slate-800 font-extrabold text-4xl">Thư viện Hình ảnh</Title>
+           <AppTitle level={1}>Thư viện Hình ảnh</AppTitle>
            <Text size="md" c="dimmed" fw={500}>Quản lý và lưu trữ tài nguyên hình ảnh toàn hệ thống</Text>
         </Stack>
 
@@ -125,7 +126,7 @@ export default function MediaLibraryPage() {
                   withBorder 
                   styles={{ root: { borderColor: '#f1f5f9' } }}
                   shadow="sm" 
-                  className="group hover:shadow-xl hover:border-blue-300 transition-all cursor-pointer relative overflow-hidden bg-white"
+                  className="group hover:shadow-xl hover:border-brand transition-all cursor-pointer relative overflow-hidden bg-white"
                   onClick={() => setSelectedImage(img)}
                 >
                   <Card.Section className="relative overflow-hidden aspect-square">
@@ -135,7 +136,7 @@ export default function MediaLibraryPage() {
                       className="object-cover w-full h-full group-hover:scale-110 transition-transform duration-500" 
                     />
                     <Box className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
-                      <ActionIcon variant="filled" color="blue" radius="xl" size="lg"><Maximize2 size={18} /></ActionIcon>
+                      <ActionIcon variant="filled" color="brand" radius="xl" size="lg"><Maximize2 size={18} /></ActionIcon>
                     </Box>
                   </Card.Section>
                   
@@ -177,7 +178,7 @@ export default function MediaLibraryPage() {
                  <Box>
                    <Text size="xs" fw={700} c="dimmed" mb={4}>ĐƯỜNG DẪN ẢNH (URL):</Text>
                    <Paper p="xs" withBorder bg="gray.0" styles={{ root: { borderColor: '#f1f5f9' } }} style={{ wordBreak: 'break-all' }} radius="sm">
-                      <Text size="xs" className="select-all font-mono" c="blue.7">{selectedImage.url}</Text>
+                      <Text size="xs" className="select-all font-mono" c="brand.7">{selectedImage.url}</Text>
                    </Paper>
                  </Box>
 
@@ -207,7 +208,7 @@ export default function MediaLibraryPage() {
                        </Group>
                        <Group justify="space-between">
                           <Text size="xs" fw={700} c="dimmed">THƯ MỤC:</Text>
-                          <Badge size="xs" variant="filled" color="blue" radius="xs">{selectedImage.folder || 'N/A'}</Badge>
+                          <Badge size="xs" variant="filled" color="brand" radius="xs">{selectedImage.folder || 'N/A'}</Badge>
                        </Group>
                     </Stack>
                  </Box>

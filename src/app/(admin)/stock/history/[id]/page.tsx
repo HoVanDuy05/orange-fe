@@ -11,6 +11,7 @@ import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { FileText, CheckCircle2, ArrowLeft, History, Calendar, User, Package, DollarSign, Box as BoxIcon } from 'lucide-react';
 import { SectionLoader } from '@/components/common/GlobalLoading';
+import { AppTitle } from '@/components/common/AppTitle';
 import dayjs from 'dayjs';
 import 'dayjs/locale/vi';
 
@@ -47,16 +48,16 @@ export default function StockHistoryPage() {
         <Breadcrumbs>
           <Link href="/"><Text size="sm" c="dimmed" style={{ cursor: 'pointer' }}>Dashboard</Text></Link>
           <Link href="/stock"><Text size="sm" c="dimmed" style={{ cursor: 'pointer' }}>Quản lý Kho</Text></Link>
-          <Text size="sm" c="blue" fw={700}>Nhật ký chỉnh sửa</Text>
+          <Text size="sm" c="brand" fw={700}>Nhật ký chỉnh sửa</Text>
         </Breadcrumbs>
         <Group justify="space-between" mt="xs">
           <Group gap="md">
-            <ActionIcon variant="light" color="blue" size="xl" radius="md" onClick={() => router.push('/stock')}>
+            <ActionIcon variant="light" color="brand" size="xl" radius="md" onClick={() => router.push('/stock')}>
               <ArrowLeft size={20} />
             </ActionIcon>
-            <Title order={1} className="text-blue-900 font-extrabold tracking-tight">Chi tiết Nhật ký Thay đổi</Title>
+            <AppTitle level={1}>Chi tiết Nhật ký Thay đổi</AppTitle>
           </Group>
-          <Badge size="xl" variant="filled" color="blue" radius="sm">MÃ PHIẾU #{id}</Badge>
+          <Badge size="xl" variant="filled" color="brand" radius="sm">MÃ PHIẾU #{id}</Badge>
         </Group>
       </Stack>
 
@@ -64,9 +65,9 @@ export default function StockHistoryPage() {
         {/* Left: Current Version Info */}
         <Stack gap="lg" style={{ flex: 1 }}>
           <Paper withBorder p="xl" radius="lg" shadow="sm" className="bg-blue-50/50 border-blue-100">
-            <Title order={3} className="text-blue-900 mb-6 flex items-center gap-2">
+            <AppTitle level={3} style={{ marginBottom: 24, display: 'flex', alignItems: 'center', gap: 8 }}>
               <Package size={22} /> Trạng thái Hiện tại
-            </Title>
+            </AppTitle>
             {currentRecord ? (
               <Stack gap="md">
                 <div>
@@ -101,7 +102,7 @@ export default function StockHistoryPage() {
           <Card withBorder p="xl" radius="lg" className="bg-slate-50 border-slate-200">
             <Group gap="sm" mb="md">
               <History size={20} className="text-slate-400" />
-              <Title order={4} className="text-slate-700">Tóm tắt biến động</Title>
+              <AppTitle level={4} mb={12}>Tóm tắt biến động</AppTitle>
             </Group>
             <Text size="sm" c="dimmed" lh={1.6}>
               Trang này ghi lại toàn bộ quá trình thay đổi dữ liệu của phiếu nhập này.
@@ -116,7 +117,7 @@ export default function StockHistoryPage() {
         <Box style={{ gridColumn: 'span 2' }}>
           <Card withBorder radius="lg" p="xl" shadow="md" className="bg-white border-slate-100 min-h-[500px]">
             <Group justify="space-between" mb="xl">
-              <Title order={3} className="text-slate-800">Dòng thời gian chỉnh sửa</Title>
+              <AppTitle level={3}>Dòng thời gian chỉnh sửa</AppTitle>
               <Badge variant="outline" size="lg">{historyData.length} Bản ghi lịch sử</Badge>
             </Group>
 
@@ -126,7 +127,7 @@ export default function StockHistoryPage() {
                 <Text c="dimmed" fw={600}>Phiếu này chưa từng bị chỉnh sửa.</Text>
               </Center>
             ) : (
-              <Timeline active={historyData.length} bulletSize={32} lineWidth={3} color="blue">
+              <Timeline active={historyData.length} bulletSize={32} lineWidth={3} color="brand">
                 {historyData.map((h: any) => (
                   <Timeline.Item
                     key={h.id}
@@ -134,15 +135,15 @@ export default function StockHistoryPage() {
                     title={
                       <Group justify="space-between" align="center" style={{ width: '100%' }}>
                         <Text fw={800} size="md">Thay đổi lúc: {dayjs(h.change_date).format('DD/MM/YYYY HH:mm:ss')}</Text>
-                        <Badge color="orange" variant="filled">SỬA BỞI: {h.updated_by || 'Admin'}</Badge>
+                        <Badge color="brand" variant="light">SỬA BỞI: {h.updated_by || 'Admin'}</Badge>
                       </Group>
                     }
                   >
                     <Card withBorder p="lg" radius="md" mt="md" bg="slate.0" shadow="xs" className="border-slate-100">
                       <SimpleGrid cols={2} spacing="xl">
                         <Box>
-                          <Text size="xs" fw={700} c="blue" tt="uppercase" mb={4}>TÊN HÀNG CŨ:</Text>
-                          <Text fw={700} className="text-slate-800 p-2 bg-blue-50/50 rounded">{h.old_item_name}</Text>
+                          <Text size="xs" fw={700} c="brand" tt="uppercase" mb={4}>TÊN HÀNG CŨ:</Text>
+                          <Text fw={700} className="text-slate-800 p-2 rounded" style={{ background: 'var(--brand-primary-soft)' }}>{h.old_item_name}</Text>
                         </Box>
                         <Box>
                           <Text size="xs" fw={700} c="red" tt="uppercase" mb={4}>GIÁ TIỀN CŨ:</Text>

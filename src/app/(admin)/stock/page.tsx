@@ -17,6 +17,7 @@ import { notifications } from '@mantine/notifications';
 import { modals } from '@mantine/modals';
 import { SectionLoader } from '@/components/common/GlobalLoading';
 import { DynamicTable, TableColumn } from '@/components/common/DynamicTable';
+import { AppTitle } from '@/components/common/AppTitle';
 import '@mantine/dates/styles.css';
 import dayjs from 'dayjs';
 import 'dayjs/locale/vi';
@@ -120,7 +121,7 @@ export default function StockPage() {
       type: 'date',
       render: (s) => (
         <Group gap="sm" justify="center">
-           <Calendar size={14} className="text-blue-500" />
+           <Calendar size={14} className="text-brand" />
            <Stack gap={0}>
               <Text size="sm" fw={700}>{dayjs(s.stock_date).format('DD/MM/YYYY')}</Text>
               <Text size="xs" c="dimmed">{dayjs(s.stock_date).format('HH:mm')}</Text>
@@ -134,7 +135,7 @@ export default function StockPage() {
       type: 'text',
       render: (s) => (
         <Stack gap={0} ta="left">
-           <Text fw={700} size="sm" className="text-blue-800">{s.item_name}</Text>
+           <Text fw={700} size="sm" className="text-brand">{s.item_name}</Text>
            <Text size="xs" c="dimmed">{s.supplier || 'Không NCC'}</Text>
         </Stack>
       )
@@ -143,7 +144,7 @@ export default function StockPage() {
       key: 'buyer_name', 
       label: 'Người mua', 
       type: 'action',
-      render: (s) => <Badge variant="light" color="blue" size="sm">{s.buyer_name || 'Admin'}</Badge>
+      render: (s) => <Badge variant="light" color="brand" size="sm">{s.buyer_name || 'Admin'}</Badge>
     },
     { 
       key: 'quantity', 
@@ -167,7 +168,7 @@ export default function StockPage() {
       type: 'action',
       render: (s) => (
         <Group gap={5} justify="center">
-           <ActionIcon variant="light" color="blue" onClick={() => handleOpenEdit(s)} size="lg" radius="md"><Edit size={16} /></ActionIcon>
+           <ActionIcon variant="light" color="brand" onClick={() => handleOpenEdit(s)} size="lg" radius="md"><Edit size={16} /></ActionIcon>
            <ActionIcon variant="light" color="teal" component={Link} href={`/stock/history/${s.id}`} size="lg" radius="md"><History size={16} /></ActionIcon>
            <ActionIcon variant="light" color="red" size="lg" radius="md" onClick={() => modals.openConfirmModal({
               title: 'Xác nhận xoá phiếu',
@@ -189,16 +190,16 @@ export default function StockPage() {
     <Stack gap="xl" p="md">
       <Group justify="space-between" align="center">
          <Stack gap={2}>
-            <Title order={1} className="text-blue-900 tracking-tight text-4xl">Quản lý Nhập Kho</Title>
+            <AppTitle level={1}>Quản lý Nhập Kho</AppTitle>
             <Text size="md" c="dimmed" fw={500}>Kiểm kê hàng hóa và quản lý chi tiêu định kỳ</Text>
          </Stack>
-         <Button leftSection={<Plus size={18} />} variant="filled" color="blue" onClick={open} size="lg" radius="md">
+         <Button leftSection={<Plus size={18} />} variant="filled" color="brand" onClick={open} size="lg" radius="md">
            Tạo phiếu nhập mới
          </Button>
       </Group>
 
       <SimpleGrid cols={{ base: 1, sm: 2 }} spacing="xl">
-        <Paper withBorder radius="lg" p="xl" className="border-l-8 border-l-blue-600 shadow-xl bg-white">
+        <Paper withBorder radius="lg" p="xl" className="border-l-8 border-l-brand shadow-xl bg-white">
            <Group justify="space-between">
               <Stack gap={0}>
                 <Text size="sm" tt="uppercase" fw={800} c="dimmed">Tổng Chi Phí Tháng Này</Text>
@@ -226,7 +227,7 @@ export default function StockPage() {
       </Card>
 
       {/* Modal CRUD */}
-      <Modal opened={opened} onClose={handleClose} title={<Text fw={900} size="xl" className="text-blue-800">{editingStock ? 'CẬP NHẬT PHIẾU NHẬP' : 'TẠO PHIẾU NHẬP MỚI'}</Text>} radius="lg" size="lg" overlayProps={{ backgroundOpacity: 0.55, blur: 5 }}>
+      <Modal opened={opened} onClose={handleClose} title={<AppTitle level={3}>{editingStock ? 'CẬP NHẬT PHIẾU NHẬP' : 'TẠO PHIẾU NHẬP MỚI'}</AppTitle>} radius="lg" size="lg" overlayProps={{ backgroundOpacity: 0.55, blur: 5 }}>
         <form onSubmit={handleSubmit} className="p-2">
           <Stack gap="lg">
             <SimpleGrid cols={2}>
@@ -244,7 +245,7 @@ export default function StockPage() {
 
             <TextInput label="Nhà cung cấp" placeholder="Vd: Chợ đầu mối Bình Điền" value={supplier} onChange={(e) => setSupplier(e.currentTarget.value)} leftSection={<Tag size={16} />} />
 
-            <Button fullWidth type="submit" loading={saveMutation.isPending} color="blue" size="lg" radius="md" className="shadow-lg">
+            <Button fullWidth type="submit" loading={saveMutation.isPending} color="brand" size="lg" radius="md" className="shadow-lg">
               {editingStock ? 'Ghi lại thay đổi' : 'Xác nhận nhập kho'}
             </Button>
           </Stack>

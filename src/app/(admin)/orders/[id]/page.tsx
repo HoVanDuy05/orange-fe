@@ -8,6 +8,7 @@ import {
   Title, Card, Text, Badge, Stack, Group, Button, SimpleGrid,
   Box, Divider, Paper, Table, ScrollArea, ActionIcon, ThemeIcon, Timeline, Textarea, Image, UnstyledButton
 } from '@mantine/core';
+import { AppTitle } from '@/components/common/AppTitle';
 import {
   IconArrowLeft, IconTrash, IconClock, IconCircleCheck,
   IconPackage, IconCash, IconCircleX,
@@ -90,7 +91,7 @@ export default function OrderDetailPage() {
         <Group gap="md">
           <ActionIcon
             variant="light"
-            color="blue"
+            color="brand"
             size="xl"
             radius="md"
             onClick={() => router.push('/orders')}
@@ -99,9 +100,7 @@ export default function OrderDetailPage() {
           </ActionIcon>
           <Stack gap={2}>
             <Text size="xs" c="dimmed" fw={700} tt="uppercase">Mã đơn IUH-{dayjs(order.created_at).format('DDMMYYYY')}-{order.id}</Text>
-            <Title order={1} className="text-slate-800 text-3xl font-black">
-              Chi tiết Đơn hàng
-            </Title>
+            <AppTitle level={1}>Chi tiết Đơn hàng</AppTitle>
           </Stack>
         </Group>
         <Stack align="flex-end" gap={4}>
@@ -125,12 +124,12 @@ export default function OrderDetailPage() {
               <Box className="absolute top-0 right-0 w-24 h-24 bg-blue-50/50 rounded-full -mr-10 -mt-10 blur-xl" />
               <Group justify="space-between" align="center">
                 <Group gap="md">
-                  <ThemeIcon size={48} radius="xl" color="blue" variant="light">
+                  <ThemeIcon size={48} radius="xl" color="brand" variant="light">
                     <IconUser size={24} />
                   </ThemeIcon>
                   <Stack gap={0}>
                     <Text size="xs" fw={700} c="dimmed" tt="uppercase">Khách hàng</Text>
-                    <Title order={3} fw={900} c="blue.8">{order.customer_name || 'Khách vãng lai'}</Title>
+                    <AppTitle level={3}>{order.customer_name || 'Khách vãng lai'}</AppTitle>
                   </Stack>
                 </Group>
                 <Group gap="md">
@@ -148,11 +147,11 @@ export default function OrderDetailPage() {
             {/* Quick Summary */}
             <SimpleGrid cols={3} spacing="md">
               <Paper p="lg" withBorder radius="md" className={order.table_id ? "bg-blue-50/50 border-blue-100 text-center" : "bg-teal-50/50 border-teal-100 text-center"}>
-                <ThemeIcon color={order.table_id ? "blue" : "teal"} size="xl" radius="md" mx="auto" mb="xs" variant="light">
+                <ThemeIcon color={order.table_id ? "brand" : "teal"} size="xl" radius="md" mx="auto" mb="xs" variant="light">
                   {order.table_id ? <IconMapPin size={22} /> : <IconPackage size={22} />}
                 </ThemeIcon>
                 <Text size="xs" fw={700} c="dimmed" tt="uppercase">{order.table_id ? 'Bàn số' : 'Hình thức'}</Text>
-                <Text size={order.table_id ? "2xl" : "xl"} fw={900} c={order.table_id ? "blue" : "teal"} mt={4}>
+                <Text size={order.table_id ? "2xl" : "xl"} fw={900} c={order.table_id ? "brand" : "teal"} mt={4}>
                   {order.table_name || 'MANG ĐI'}
                 </Text>
               </Paper>
@@ -211,12 +210,12 @@ export default function OrderDetailPage() {
                           {item.image_url ? (
                             <Image src={item.image_url} w={40} h={40} radius="sm" style={{ objectFit: 'cover' }} alt="" />
                           ) : (
-                            <ThemeIcon color="blue" size="md" variant="light" radius="sm">
+                            <ThemeIcon color="brand" size="md" variant="light" radius="sm">
                               <IconToolsKitchen2 size={18} />
                             </ThemeIcon>
                           )}
                           <Stack gap={0}>
-                            <Text fw={700} c="blue" size="sm">{item.product_name || `Món #${item.product_id}`}</Text>
+                            <Text fw={700} c="brand" size="sm">{item.product_name || `Món #${item.product_id}`}</Text>
                             <Text size="xs" c="dimmed">ID: {item.product_id}</Text>
                           </Stack>
                         </Group>
