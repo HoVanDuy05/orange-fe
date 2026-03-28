@@ -1,17 +1,25 @@
 'use client';
 
+interface ExtendedWindow extends Window {
+  webkitAudioContext?: typeof AudioContext;
+  AudioContext: typeof AudioContext;
+}
+
 import React, { useEffect, useState } from 'react';
 import {
   AppShell, Burger, Group, Text, Box, Avatar, Divider,
   Loader, Center, Stack, Tooltip, UnstyledButton, Badge,
   Menu, Indicator, rem, ScrollArea,
-  Button
+  Button,
+  ActionIcon,
+  ThemeIcon
 } from '@mantine/core';
-import { useDisclosure } from '@mantine/hooks';
+import { useDisclosure, useMediaQuery } from '@mantine/hooks';
 import {
-  LogOut, BarChart3, Bell, BellOff, ChevronRight,
+  LogOut, BarChart3, Bell, BellOff,
   Settings, User, ExternalLink, Volume2, VolumeX,
-  Circle
+  Circle, ChevronLeft, ChevronRight, PanelLeftClose, PanelLeftOpen,
+  Info, CheckCircle2, AlertCircle, AlertTriangle
 } from 'lucide-react';
 import { useRouter, usePathname } from 'next/navigation';
 import Link from 'next/link';
@@ -20,6 +28,10 @@ import { useRealtime } from '@/hooks/useRealtime';
 import { notifications } from '@mantine/notifications';
 import { ADMIN_NAV_GROUPS } from '@/constants/menu';
 import { useBrandTheme } from '@/providers/BrandThemeProvider';
+
+import { getNotificationIcon, getNotificationColor } from '@/utils/notification-ui';
+import { MOCK_NOTIFICATIONS } from '@/constants/notifications';
+import { NotificationItem } from '@/types/notifications';
 
 export default function AdminNav({ children }: { children: React.ReactNode }) {
   const { activeTheme } = useBrandTheme();
@@ -33,13 +45,19 @@ export default function AdminNav({ children }: { children: React.ReactNode }) {
   useRealtime();
   const [isClient, setIsClient] = useState(false);
   const [soundEnabled, setSoundEnabled] = useState(true);
+  const [desktopOpened, setDesktopOpened] = useState(true);
+  
+  // Auto-collapse sidebar on smaller screens
+  const isMobile = useMediaQuery('(max-width: 1200px)');
 
-  // Mock notifications
-  const [notificationsList, setNotificationsList] = useState([
-    { id: 1, title: 'Đơn hàng mới', message: 'Bạn có đơn hàng #1234 cần xử lý', time: '2 phút trước', read: false },
-    { id: 2, title: 'Hết hàng', message: 'Sản phẩm "Cà phê sữa" đã hết hàng', time: '15 phút trước', read: false },
-    { id: 3, title: 'Hệ thống', message: 'Cập nhật phiên bản mới thành công', time: '1 giờ trước', read: true },
-  ]);
+  useEffect(() => {
+    if (isMobile !== undefined) {
+      setDesktopOpened(!isMobile);
+    }
+  }, [isMobile]);
+
+  // Use constants and types
+  const [notificationsList, setNotificationsList] = useState<NotificationItem[]>(MOCK_NOTIFICATIONS);
 
   const unreadCount = notificationsList.filter(n => !n.read).length;
 
@@ -49,10 +67,14 @@ export default function AdminNav({ children }: { children: React.ReactNode }) {
     setSoundEnabled(!isMuted);
 
     const unlockAudio = () => {
-      const audioCtx = new (window.AudioContext || (window as any).webkitAudioContext)();
-      if (audioCtx.state === 'suspended') audioCtx.resume();
+      const win = window as unknown as ExtendedWindow;
+      const AudioContextClass = win.AudioContext || win.webkitAudioContext;
+      if (!AudioContextClass) return;
+      
+      const audioCtx = new AudioContextClass();
+      if (audioCtx.state === 'suspended') void audioCtx.resume();
       const audio = new Audio('data:audio/wav;base64,UklGRigAAABXQVZFZm10IBAAAAABAAEARKwAAIhYAQACABAAZGF0YQQAAAD//w==');
-      audio.play().catch(() => { });
+      void audio.play().catch(() => { });
       window.removeEventListener('click', unlockAudio);
     };
     window.addEventListener('click', unlockAudio);
@@ -95,7 +117,11 @@ export default function AdminNav({ children }: { children: React.ReactNode }) {
 
   return (
     <AppShell
-      navbar={{ width: 260, breakpoint: 'sm', collapsed: { mobile: !opened } }}
+      navbar={{
+        width: desktopOpened ? 260 : 80,
+        breakpoint: 'sm',
+        collapsed: { mobile: !opened }
+      }}
       header={{ height: 64 }}
       padding={0}
     >
@@ -103,11 +129,22 @@ export default function AdminNav({ children }: { children: React.ReactNode }) {
         <Group h="100%" px="lg" justify="space-between">
           <Group gap="sm">
             <Burger opened={opened} onClick={toggle} hiddenFrom="sm" size="sm" color="#1E293B" />
+            <ActionIcon
+              variant="subtle"
+              color="gray"
+              onClick={() => setDesktopOpened(!desktopOpened)}
+              visibleFrom="sm"
+              size="lg"
+            >
+              {desktopOpened ? <PanelLeftClose size={20} /> : <PanelLeftOpen size={20} />}
+            </ActionIcon>
             <Group gap="xs" align="center">
               <img src={activeTheme?.logo_url || "/orange-logo.png"} alt="Logo" style={{ height: 44, width: 'auto', objectFit: 'contain' }} />
-              <Text fw={900} size="lg" visibleFrom="sm" style={{ color: primaryColor, letterSpacing: '-0.03em', lineHeight: 1 }}>
-                {activeTheme?.brand_name || 'Orange'}
-              </Text>
+              {desktopOpened && (
+                <Text fw={900} size="lg" visibleFrom="sm" style={{ color: primaryColor, letterSpacing: '-0.03em', lineHeight: 1 }}>
+                  {activeTheme?.brand_name || 'Orange'}
+                </Text>
+              )}
             </Group>
           </Group>
 
@@ -130,32 +167,54 @@ export default function AdminNav({ children }: { children: React.ReactNode }) {
                 </Indicator>
               </Menu.Target>
 
-              <Menu.Dropdown p={0}>
-                <Box p="md" style={{ borderBottom: '1px solid #F1F5F9' }}>
+              <Menu.Dropdown p={0} style={{ border: '1px solid #F1F5F9', boxShadow: '0 20px 40px -10px rgba(0,0,0,0.1)' }}>
+                <Box p="md" style={{ borderBottom: '1px solid #F1F5F9', background: '#F8FAFC' }}>
                   <Group justify="space-between">
-                    <Text fw={800} size="sm">Thông báo</Text>
-                    <Badge style={{ background: primaryColor }} variant="filled" size="xs">{unreadCount} mới</Badge>
+                    <Text fw={900} size="sm" c="gray.9">Thông báo hệ thống</Text>
+                    <Badge variant="filled" size="xs" color="brand" radius="sm">{unreadCount} tin mới</Badge>
                   </Group>
                 </Box>
 
-                <ScrollArea h={300}>
+                <ScrollArea h={320} p={0}>
                   {notificationsList.map((n) => (
-                    <Menu.Item key={n.id} style={{ borderBottom: '1px solid #F8FAFC' }}>
-                      <Group gap="sm" wrap="nowrap" align="flex-start">
-                        {!n.read && <Circle size={8} fill={primaryColor} color={primaryColor} style={{ marginTop: 6 }} />}
-                        <Box style={{ flex: 1 }}>
-                          <Text size="sm" fw={n.read ? 600 : 800} c={n.read ? 'gray.7' : 'gray.9'}>{n.title}</Text>
-                          <Text size="xs" c="dimmed" lineClamp={2}>{n.message}</Text>
-                          <Text size="10px" style={{ color: primaryColor }} mt={4} fw={700}>{n.time}</Text>
+                    <Menu.Item
+                      key={n.id}
+                      onClick={() => router.push('/notifications')}
+                      style={{
+                        borderBottom: '1px solid #F8FAFC',
+                        padding: '12px 16px',
+                        background: !n.read ? 'rgba(241, 107, 0, 0.03)' : 'transparent'
+                      }}
+                    >
+                      <Group gap="md" wrap="nowrap" align="flex-start">
+                        <ThemeIcon size={32} radius="lg" variant="light" color={getNotificationColor(n.type)}>
+                          {getNotificationIcon(n.type)}
+                        </ThemeIcon>
+                        <Box style={{ flex: 1, minWidth: 0 }}>
+                          <Group justify="space-between" wrap="nowrap" mb={2}>
+                            <Text size="sm" fw={!n.read ? 800 : 700} c={!n.read ? 'gray.9' : 'gray.7'} lineClamp={1}>{n.title}</Text>
+                            <Text size="10px" c="dimmed" fw={700}>{n.time}</Text>
+                          </Group>
+                          <Text size="xs" c="dimmed" lineClamp={2} fw={600} style={{ lineHeight: 1.4 }}>{n.message}</Text>
                         </Box>
                       </Group>
                     </Menu.Item>
                   ))}
                 </ScrollArea>
 
-                <Box p="xs" style={{ borderTop: '1px solid #F1F5F9' }}>
-                  <Button variant="subtle" fullWidth size="compact-xs" color="gray" component={Link} href="/notifications">
-                    Xem tất cả thông báo
+                <Box p="xs" style={{ borderTop: '1px solid #F1F5F9', background: '#FFFFFF' }}>
+                  <Button
+                    variant="subtle"
+                    fullWidth
+                    size="sm"
+                    color="brand"
+                    component={Link}
+                    href="/notifications"
+                    fw={800}
+                    radius="md"
+                    rightSection={<ChevronRight size={14} />}
+                  >
+                    Xem tất cả trong trung tâm
                   </Button>
                 </Box>
               </Menu.Dropdown>
@@ -227,14 +286,16 @@ export default function AdminNav({ children }: { children: React.ReactNode }) {
         <Box style={{ flex: 1, overflowY: 'auto' }}>
           {ADMIN_NAV_GROUPS.map((group) => (
             <Box key={group.label} mb="lg">
-              <Text
-                size="10px"
-                fw={800}
-                tt="uppercase"
-                style={{ color: '#94A3B8', letterSpacing: '0.15em', padding: '0px 12px 8px' }}
-              >
-                {group.label}
-              </Text>
+              {desktopOpened && (
+                <Text
+                  size="10px"
+                  fw={800}
+                  tt="uppercase"
+                  style={{ color: '#94A3B8', letterSpacing: '0.15em', padding: '0px 12px 8px' }}
+                >
+                  {group.label}
+                </Text>
+              )}
               {group.items.map((item) => {
                 const isActive = pathname === item.href || (pathname?.startsWith(item.href + '/') && item.href !== '/');
                 return (
@@ -254,30 +315,34 @@ export default function AdminNav({ children }: { children: React.ReactNode }) {
                       onMouseEnter={e => { if (!isActive) e.currentTarget.style.background = '#F8FAFC'; }}
                       onMouseLeave={e => { if (!isActive) e.currentTarget.style.background = 'transparent'; }}
                     >
-                      <item.icon
-                        size={18}
-                        style={{ color: isActive ? primaryColor : '#64748B', flexShrink: 0 }}
-                        strokeWidth={isActive ? 2.5 : 2}
-                      />
-                      <Text
-                        size="sm"
-                        fw={isActive ? 800 : 600}
-                        style={{ color: isActive ? primaryColor : '#334155', flex: 1 }}
-                      >
-                        {item.label}
-                      </Text>
-                      {(item as any).badge && (
-                        <Badge 
-                          size="xs" 
-                          variant="light" 
-                          style={{ 
-                            background: `${primaryColor}1A`, 
+                      <Tooltip label={!desktopOpened ? item.label : ''} position="right" withArrow disabled={desktopOpened}>
+                        <item.icon
+                          size={18}
+                          style={{ color: isActive ? primaryColor : '#64748B', flexShrink: 0 }}
+                          strokeWidth={isActive ? 2.5 : 2}
+                        />
+                      </Tooltip>
+                      {desktopOpened && (
+                        <Text
+                          size="sm"
+                          fw={isActive ? 800 : 600}
+                          style={{ color: isActive ? primaryColor : '#334155', flex: 1 }}
+                        >
+                          {item.label}
+                        </Text>
+                      )}
+                      {desktopOpened && item.badge && (
+                        <Badge
+                          size="xs"
+                          variant="light"
+                          style={{
+                            background: `${primaryColor}1A`,
                             color: primaryColor,
-                            fontSize: 9, 
-                            fontWeight: 800 
+                            fontSize: 9,
+                            fontWeight: 800
                           }}
                         >
-                          {(item as any).badge}
+                          {item.badge}
                         </Badge>
                       )}
                     </Box>
@@ -300,16 +365,17 @@ export default function AdminNav({ children }: { children: React.ReactNode }) {
             onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}
           >
             <LogOut size={18} style={{ color: '#EF4444' }} strokeWidth={2.5} />
-            <Text size="sm" fw={700} style={{ color: '#EF4444' }}>Đăng xuất an toàn</Text>
+            {desktopOpened && <Text size="sm" fw={700} style={{ color: '#EF4444' }}>Đăng xuất an toàn</Text>}
           </UnstyledButton>
         </Box>
       </AppShell.Navbar>
 
-      <AppShell.Main style={{ background: '#F8FAFC', minHeight: '100vh' }}>
-        <Box p={{ base: 'md', sm: 'xl' }} style={{ maxWidth: '1600px', margin: '0 auto' }}>
+      <AppShell.Main style={{ background: '#F8FAFC', height: '100vh', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+        <Box style={{ flex: 1, position: 'relative', overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
           {children}
         </Box>
       </AppShell.Main>
+
     </AppShell>
   );
 }

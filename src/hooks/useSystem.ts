@@ -2,11 +2,22 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { notifications } from '@mantine/notifications';
 import { systemApi } from '@/api/systemApi';
 import { Branch, Employee, BrandTheme } from '@/types/system';
-import { useState } from 'react';
+import { useSearchParams, useRouter, usePathname } from 'next/navigation';
 
 export const useSystem = () => {
   const queryClient = useQueryClient();
-  const [activeTab, setActiveTab] = useState('employees');
+  const searchParams = useSearchParams();
+  const router = useRouter();
+  const pathname = usePathname();
+
+  // Tab from URL
+  const activeTab = searchParams.get('tab') || 'employees';
+
+  const setActiveTab = (val: string | null) => {
+    const params = new URLSearchParams(searchParams);
+    if (!val || val === 'employees') params.delete('tab'); else params.set('tab', val);
+    router.push(`${pathname}?${params.toString()}`);
+  };
 
   // --- QUERIES ---
   const { data: branches = [], isFetching: isFetchingBranches } = useQuery<Branch[]>({
@@ -58,7 +69,7 @@ export const useSystem = () => {
       queryClient.invalidateQueries({ queryKey: ['employees'] });
       notifications.show({ title: 'Thành công', message: 'Đã tạo nhân viên mới', color: 'green' });
     },
-    onError: (err: any) => {
+    onError: (err: { response?: { data?: { message?: string } } }) => {
       notifications.show({ title: 'Lỗi', message: err.response?.data?.message || 'Có lỗi xảy ra', color: 'red' });
     }
   });
@@ -89,14 +100,22 @@ export const useSystem = () => {
   });
 
   return {
-    activeTab, setActiveTab,
-    branches, employees, themes, isLoading,
-    createBranch: createBranchMut.mutate,
-    updateBranch: updateBranchMut.mutate,
-    deleteBranch: deleteBranchMut.mutate,
-    createEmployee: createEmployeeMut.mutate,
-    updateEmployee: updateEmployeeMut.mutate,
-    deleteEmployee: deleteEmployeeMut.mutate,
-    updateTheme: updateThemeMut.mutate,
+    state: {
+      activeTab,
+      branches,
+      employees,
+      themes,
+      isLoading
+    },
+    actions: {
+      setActiveTab,
+      createBranch: createBranchMut.mutate,
+      updateBranch: updateBranchMut.mutate,
+      deleteBranch: deleteBranchMut.mutate,
+      createEmployee: createEmployeeMut.mutate,
+      updateEmployee: updateEmployeeMut.mutate,
+      deleteEmployee: deleteEmployeeMut.mutate,
+      updateTheme: updateThemeMut.mutate,
+    }
   };
 };

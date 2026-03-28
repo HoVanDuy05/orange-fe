@@ -33,7 +33,9 @@ const actionConfigs: Record<ActionButtonType, { icon: any, color: string, defaul
   next: { icon: ChevronRight, color: 'gray', defaultLabel: 'Tiếp theo' },
 };
 
-export type ActionButtonProps = BaseProps & (ActionIconProps | ButtonProps) & { onClick?: (e: any) => void };
+export interface ActionButtonProps extends BaseProps {
+  [key: string]: any;
+}
 
 export const ActionButton = ({ 
   type, 
@@ -49,7 +51,7 @@ export const ActionButton = ({
 }: ActionButtonProps) => {
   const config = actionConfigs[type];
   const Icon = config.icon;
-  const showLabel = label || (!iconOnly && (type === 'add' || type === 'save' || type === 'confirm' || type === 'reset'));
+  const showLabel = label || (!iconOnly && (type === 'add' || type === 'save' || type === 'confirm' || type === 'reset' || type === 'edit' || type === 'delete'));
 
   const iconSize = typeof size === 'string' ? rem(size) : 18;
 

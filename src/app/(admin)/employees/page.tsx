@@ -13,9 +13,12 @@ import { ActionButton } from '@/components/common/ActionButton';
 import { DynamicTable } from '@/components/common/DynamicTable';
 import { AppTitle } from '@/components/common/AppTitle';
 
+import { Employee, Branch } from '@/types/system';
+
 export default function EmployeesPage() {
   const {
-    employees, branches, isLoading, deleteEmployee, deleteBranch
+    state: { employees, branches, isLoading, activeTab },
+    actions: { setActiveTab, deleteEmployee, deleteBranch }
   } = useSystem();
 
   if (isLoading) return <SectionLoader />;
@@ -24,7 +27,7 @@ export default function EmployeesPage() {
     { 
       key: 'full_name', 
       label: 'Nhân sự', 
-      render: (emp: any) => (
+      render: (emp: Employee) => (
         <Group gap="sm">
           <Avatar color="brand" radius="xl" fw={700}>{emp.full_name?.charAt(0) || 'U'}</Avatar>
           <Box>
@@ -37,7 +40,7 @@ export default function EmployeesPage() {
     { 
       key: 'branch_name', 
       label: 'Chi nhánh', 
-      render: (emp: any) => (
+      render: (emp: Employee) => (
         <Badge color="brand" variant="light" radius="sm" fw={700}>
           {emp.branch_name || 'Hệ thống (Toàn bộ)'}
         </Badge>
@@ -46,7 +49,7 @@ export default function EmployeesPage() {
     { 
       key: 'role', 
       label: 'Chức vụ', 
-      render: (emp: any) => (
+      render: (emp: Employee) => (
         <Badge color={emp.role === 'admin' ? 'red' : 'cyan'} variant="filled" radius="sm">
           {emp.role.toUpperCase()}
         </Badge>
@@ -56,7 +59,7 @@ export default function EmployeesPage() {
       key: 'actions', 
       label: 'Thao tác', 
       type: 'action',
-      render: (emp: any) => (
+      render: (emp: Employee) => (
         <Group gap={4} justify="center">
           <ActionButton type="edit" size="sm" />
           <ActionButton type="delete" size="sm" onClick={() => deleteEmployee(emp.id)} />
@@ -69,7 +72,7 @@ export default function EmployeesPage() {
     {
       key: 'name',
       label: 'Tên Chi Nhánh',
-      render: (br: any) => (
+      render: (br: Branch) => (
         <Box>
           <Text fw={800} size="sm">{br.name}</Text>
           <Text size="xs" c="dimmed">{br.phone || 'Chưa cập nhật hotline'}</Text>
@@ -79,12 +82,12 @@ export default function EmployeesPage() {
     {
       key: 'address',
       label: 'Vị trí / Địa chỉ',
-      render: (br: any) => <Text size="sm" fw={500}>{br.address || 'Chưa có địa chỉ'}</Text>
+      render: (br: Branch) => <Text size="sm" fw={500}>{br.address || 'Chưa có địa chỉ'}</Text>
     },
     {
       key: 'status',
       label: 'Trạng thái',
-      render: (br: any) => (
+      render: (br: Branch) => (
         <Badge color={br.is_active ? 'green' : 'gray'} variant="light" radius="xs" fw={800}>
           {br.is_active ? 'ĐANG HOẠT ĐỘNG' : 'TẠM NGƯNG'}
         </Badge>
@@ -94,7 +97,7 @@ export default function EmployeesPage() {
       key: 'actions',
       label: 'Thao tác',
       type: 'action',
-      render: (br: any) => (
+      render: (br: Branch) => (
         <Group gap={4} justify="center">
           <ActionButton type="edit" size="sm" />
           <ActionButton type="delete" size="sm" onClick={() => deleteBranch(br.id)} />
@@ -104,37 +107,44 @@ export default function EmployeesPage() {
   ];
 
   return (
-    <Stack gap="xl">
-      <PageHeader
-        title="Quản lý Nhân sự & Chi nhánh"
-        description="Quản lý đội ngũ nhân viên và các địa điểm kinh doanh của hệ thống."
-        breadcrumbs={[{ label: 'Dashboard', href: '/' }, { label: 'Nhân sự' }]}
-      />
-
-      <Card withBorder radius="xl" shadow="sm" p="xl" style={{ overflow: 'hidden', background: '#FFFFFF' }}>
-        <Tabs defaultValue="staff" variant="pills" color="brand" radius="xl">
-          <Tabs.List mb="xl">
-            <Tabs.Tab value="staff" leftSection={<Users size={16} />}>Danh sách Nhân sự</Tabs.Tab>
-            <Tabs.Tab value="branches" leftSection={<Building2 size={16} />}>Danh sách Chi nhánh</Tabs.Tab>
-          </Tabs.List>
-
-          <Tabs.Panel value="staff">
-            <Group justify="space-between" mb="md">
-               <AppTitle level={3}>Tài khoản nhân viên</AppTitle>
-               <ActionButton type="add" label="Thêm nhân sự" variant="filled" />
+    <Box p="xl">
+      <Stack gap="xl">
+        <PageHeader 
+          title="Nhân sự & Chi nhánh" 
+          description="Quản lý đội ngũ nhân viên và quản trị viên, cùng hệ thống các điểm bán của Orange."
+          actions={
+            <Group gap="sm">
+              <ActionButton type="add" label="Thêm mới" color="brand" fw={800} />
             </Group>
-            <DynamicTable columns={employeeColumns as any} data={employees} loading={isLoading} />
-          </Tabs.Panel>
+          }
+        />
 
-          <Tabs.Panel value="branches">
-            <Group justify="space-between" mb="md">
-               <AppTitle level={3}>Chi nhánh hoạt động</AppTitle>
-               <ActionButton type="add" label="Thêm chi nhánh" variant="filled" />
-            </Group>
-            <DynamicTable columns={branchColumns as any} data={branches} loading={isLoading} />
-          </Tabs.Panel>
-        </Tabs>
-      </Card>
-    </Stack>
+        <Card withBorder radius="xl" shadow="sm" p="xl" style={{ overflow: 'hidden', background: '#FFFFFF' }}>
+          <Tabs defaultValue="staff" variant="pills" color="brand" radius="xl">
+            <Tabs.List mb="xl">
+              <Tabs.Tab value="staff" leftSection={<Users size={16} />}>Danh sách Nhân sự</Tabs.Tab>
+              <Tabs.Tab value="branches" leftSection={<Building2 size={16} />}>Danh sách Chi nhánh</Tabs.Tab>
+            </Tabs.List>
+
+            <Tabs.Panel value="staff">
+              <Group justify="space-between" mb="md">
+                 <AppTitle level={3}>Tài khoản nhân viên</AppTitle>
+                 <ActionButton type="add" label="Thêm nhân sự" variant="filled" />
+              </Group>
+              <DynamicTable columns={employeeColumns as any} data={employees} loading={isLoading} />
+            </Tabs.Panel>
+
+            <Tabs.Panel value="branches">
+              <Group justify="space-between" mb="md">
+                 <AppTitle level={3}>Chi nhánh hoạt động</AppTitle>
+                 <ActionButton type="add" label="Thêm chi nhánh" variant="filled" />
+              </Group>
+              <DynamicTable columns={branchColumns as any} data={branches} loading={isLoading} />
+            </Tabs.Panel>
+          </Tabs>
+        </Card>
+      </Stack>
+    </Box>
   );
+
 }

@@ -20,6 +20,7 @@ import { SectionLoader } from '@/components/common/GlobalLoading';
 // Reusable Components
 import { PageHeader } from '@/components/admin/ui/PageHeader';
 import { AppTitle } from '@/components/common/AppTitle';
+import { ActionButton } from '@/components/common/ActionButton';
 
 interface DiningTable {
   id: number;
@@ -92,12 +93,19 @@ export default function TablesPage() {
         breadcrumbs={[{ label: 'Dashboard', href: '/' }, { label: 'Bàn phục vụ' }]}
         actions={
           <Group gap="sm">
-            <ActionIcon variant="light" color="brand" size="36px" radius="md" onClick={() => refetch()} loading={isRefetching}>
-              <RefreshCcw size={18} />
-            </ActionIcon>
-            <Button leftSection={<Plus size={18} />} color="brand" onClick={open} radius="md" fw={800}>
-               Thêm bàn mới
-            </Button>
+            <ActionButton 
+              type="reset" 
+              variant="light" 
+              onClick={() => refetch()} 
+              loading={isRefetching}
+              tooltip="Làm mới sơ đồ"
+            />
+            <ActionButton 
+              type="add" 
+              label="Thêm bàn mới" 
+              onClick={open} 
+              fw={800} 
+            />
           </Group>
         }
       />
@@ -148,22 +156,20 @@ export default function TablesPage() {
                 </Box>
 
                 <Group gap="xs" mt="xs">
-                   <Tooltip label="Sửa tên">
-                     <ActionIcon variant="light" color="brand" radius="md" size="md" onClick={() => handleOpenEdit(t)}>
-                       <Edit size={16} />
-                     </ActionIcon>
-                   </Tooltip>
-                   <Tooltip label="Xoá bàn">
-                     <ActionIcon variant="light" color="red" radius="md" size="md" onClick={() => modals.openConfirmModal({
+                   <ActionButton 
+                     type="edit" 
+                     onClick={() => handleOpenEdit(t)} 
+                   />
+                   <ActionButton 
+                     type="delete" 
+                     onClick={() => modals.openConfirmModal({
                        title: 'Xoá bàn phục vụ',
                        children: <Text size="sm">Bạn có chắc chắn muốn xoá {t.table_name}? Lưu ý: Không thể xoá bàn đang có hoá đơn chưa thanh toán.</Text>,
                        labels: { confirm: 'Xoá ngay', cancel: 'Bỏ qua' },
                        confirmProps: { color: 'red' },
                        onConfirm: () => deleteMutation.mutate(t.id)
-                     })}>
-                       <Trash2 size={16} />
-                     </ActionIcon>
-                   </Tooltip>
+                     })}
+                   />
                 </Group>
               </Stack>
 

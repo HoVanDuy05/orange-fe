@@ -45,11 +45,8 @@ export default function StockHistoryPage() {
     <Stack gap="xl" p="md">
       {/* Breadcrumbs & Navigation */}
       <Stack gap={2}>
-        <Breadcrumbs>
-          <Link href="/"><Text size="sm" c="dimmed" style={{ cursor: 'pointer' }}>Dashboard</Text></Link>
-          <Link href="/stock"><Text size="sm" c="dimmed" style={{ cursor: 'pointer' }}>Quản lý Kho</Text></Link>
-          <Text size="sm" c="brand" fw={700}>Nhật ký chỉnh sửa</Text>
-        </Breadcrumbs>
+      {/* Breadcrumbs removed as per user request */}
+
         <Group justify="space-between" mt="xs">
           <Group gap="md">
             <ActionIcon variant="light" color="brand" size="xl" radius="md" onClick={() => router.push('/stock')}>

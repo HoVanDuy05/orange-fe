@@ -1,523 +1,453 @@
 'use client';
 
-import React, { useState, useMemo } from 'react';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import https from '@/api/https';
+import React from 'react';
 import {
-  Title, Text, Stack, Group, Card, Badge, Button, TextInput,
-  NumberInput, Select, ActionIcon, Divider, ScrollArea, Box,
-  Image, Center, Textarea, Paper, SimpleGrid, UnstyledButton,
-  ThemeIcon, Indicator, rem, SegmentedControl, Loader, Modal
+  Text, Stack, Group, Card, Badge, Button, TextInput,
+  Select, ActionIcon, Divider, ScrollArea, Box,
+  Image, Center, Paper, SimpleGrid, UnstyledButton,
+  ThemeIcon, Indicator, SegmentedControl, Modal, Pagination
 } from '@mantine/core';
-import { AppTitle } from '@/components/common/AppTitle';
 import {
   Search, ShoppingCart, Plus, Minus, Trash2, ChefHat,
-  Tag, Utensils, Receipt, CheckCircle2, X, User, StickyNote, ShoppingBag,
-  CreditCard
+  Utensils, CheckCircle2, ShoppingBag, CreditCard, Receipt,
+  ChevronLeft, ChevronRight, ShoppingBasket, X
 } from 'lucide-react';
-import { notifications } from '@mantine/notifications';
+import { AppTitle } from '@/components/common/AppTitle';
+import { ActionButton } from '@/components/common/ActionButton';
 import { SectionLoader } from '@/components/common/GlobalLoading';
-
-interface CartItem {
-  product_id: number;
-  product_name: string;
-  unit_price: number;
-  quantity: number;
-  image_url?: string;
-}
-
-const VND = (n: number) =>
-  new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(n);
+import { usePOS } from '@/hooks/usePOS';
+import { formatCurrency } from '@/utils/format';
+import { OrderType, Product, Table, Category } from '@/types/pos';
+import { PaymentMethodSelect } from '@/components/common/PaymentMethodSelect';
 
 export default function POSPage() {
-  const queryClient = useQueryClient();
-
-  // Menu filters
-  const [search, setSearch] = useState('');
-  const [filterCat, setFilterCat] = useState<string | null>(null);
-
-  // Cart
-  const [cart, setCart] = useState<CartItem[]>([]);
-
-  // Order info
-  const [orderType, setOrderType] = useState<string>('dine-in'); // 'dine-in' | 'take-away'
-  const [tableId, setTableId] = useState<string | null>(null);
-  const [customerName, setCustomerName] = useState('');
-  const [customerPhone, setCustomerPhone] = useState('');
-  const [note, setNote] = useState('');
-
-  // Payment UI
-  const [paymentModalOpen, setPaymentModalOpen] = useState(false);
-  const [selectedPayment, setSelectedPayment] = useState<string>('cash');
-
-  // Fetching
-  const { data: categories = [], isLoading: catLoading } = useQuery({
-    queryKey: ['categories'],
-    queryFn: async () => {
-      const res = await https.get('/categories');
-      return Array.isArray(res.data) ? res.data : res.data.data;
+  const {
+    state: {
+      search, setSearch,
+      filterCat, setFilterCat,
+      page, totalPages, total,
+      cart, cartTotal, cartCount,
+      orderType, setOrderType,
+      tableId, setTableId,
+      customerName, setCustomerName,
+      customerPhone, setCustomerPhone,
+      note, setNote,
+      paymentModalOpen, setPaymentModalOpen,
+      selectedPayment, setSelectedPayment,
+      categories, catLoading,
+      products, prodLoading,
+      paginatedProducts,
+      tables, tablesLoading,
+      filteredProducts,
+      isCreatingOrder
     },
-  });
-
-  const { data: products = [], isLoading: prodLoading } = useQuery({
-    queryKey: ['products'],
-    queryFn: async () => {
-      const res = await https.get('/products');
-      return Array.isArray(res.data) ? res.data : res.data.data;
-    },
-  });
-
-  const { data: rawTables = [], isLoading: tablesLoading } = useQuery({
-    queryKey: ['tables'],
-    queryFn: async () => {
-      const res = await https.get('/tables');
-      return Array.isArray(res.data) ? res.data : res.data?.data || [];
-    },
-  });
-
-  const tables: any[] = Array.isArray(rawTables) ? rawTables : [];
-  const categoryList: any[] = Array.isArray(categories) ? categories : (categories as any)?.data || [];
-  const productList: any[] = Array.isArray(products) ? products : (products as any)?.data || [];
-
-  const filteredProducts = useMemo(() =>
-    productList
-      .filter(p => !filterCat || p.category_id?.toString() === filterCat)
-      .filter(p => !search || p.product_name?.toLowerCase().includes(search.toLowerCase())),
-    [productList, filterCat, search]
-  );
-
-  // ---- Cart helpers ----
-  const addToCart = (product: any) => {
-    const unitPrice = Number(product.discount_price || product.price);
-    setCart(prev => {
-      const existing = prev.find(i => i.product_id === product.id);
-      if (existing) {
-        return prev.map(i =>
-          i.product_id === product.id ? { ...i, quantity: i.quantity + 1 } : i
-        );
-      }
-      return [...prev, {
-        product_id: product.id,
-        product_name: product.product_name,
-        unit_price: unitPrice,
-        quantity: 1,
-        image_url: product.image_url,
-      }];
-    });
-  };
-
-  const updateQty = (productId: number, delta: number) => {
-    setCart(prev => prev
-      .map(i => i.product_id === productId ? { ...i, quantity: i.quantity + delta } : i)
-      .filter(i => i.quantity > 0)
-    );
-  };
-
-  const removeFromCart = (productId: number) => {
-    setCart(prev => prev.filter(i => i.product_id !== productId));
-  };
-
-  const cartTotal = cart.reduce((sum, i) => sum + i.unit_price * i.quantity, 0);
-  const cartCount = cart.reduce((sum, i) => sum + i.quantity, 0);
-
-  // ---- Create Order ----
-  const createOrder = useMutation({
-    mutationFn: () =>
-      https.post('/orders', {
-        table_id: orderType === 'dine-in' ? (tableId ? Number(tableId) : null) : null,
-        customer_name: customerName || null,
-        customer_phone: customerPhone || null,
-        note: note || null,
-        status: 'paid',
-        payment_method: selectedPayment,
-        items: cart.map(i => ({
-          product_id: i.product_id,
-          quantity: i.quantity,
-          unit_price: i.unit_price,
-        })),
-      }),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['orders'] });
-      queryClient.invalidateQueries({ queryKey: ['tables'] });
-      notifications.show({
-        title: '✅ Đặt hàng thành công!',
-        message: `Đơn hàng đã được tạo và gửi bếp.`,
-        color: 'green',
-      });
-      setCart([]);
-      setTableId(null);
-      setOrderType('dine-in');
-      setCustomerName('');
-      setCustomerPhone('');
-      setNote('');
-      setPaymentModalOpen(false);
-    },
-    onError: (err: any) => {
-      notifications.show({
-        title: 'Lỗi',
-        message: err.response?.data?.message || 'Không thể tạo đơn hàng.',
-        color: 'red',
-      });
-    },
-  });
+    actions: {
+      addToCart,
+      updateQty,
+      removeFromCart,
+      clearCart,
+      handleConfirmOrder,
+      setPage
+    }
+  } = usePOS();
 
   if (catLoading || prodLoading) return <SectionLoader />;
 
   return (
-    <Box style={{ height: 'calc(100vh - 80px)', display: 'flex', flexDirection: 'column', gap: 0 }}>
-      {/* Header */}
-      <Group px="md" py="sm" justify="space-between" className="border-b border-slate-200 bg-white" style={{ flexShrink: 0 }}>
-        <Group gap="sm">
-          <ThemeIcon size={40} radius="md" variant="gradient" gradient={{ from: 'brand', to: 'brand.4' }}>
-            <ChefHat size={22} />
-          </ThemeIcon>
-          <Stack gap={0}>
-            <AppTitle level={3}>Gọi món cho Khách</AppTitle>
-            <Text size="xs" c="dimmed">Chọn món → Thêm giỏ → Xác nhận đơn</Text>
-          </Stack>
-        </Group>
-        {cartCount > 0 && (
-          <Badge size="xl" variant="filled" color="brand" radius="md" leftSection={<ShoppingCart size={16} />}>
-            {cartCount} món · {VND(cartTotal)}
-          </Badge>
-        )}
-      </Group>
+    <Box style={{ height: 'calc(100vh - 64px)', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+      {/* Header - Unified & Premium */}
+      <Box px="xl" py="sm" className="bg-white border-b border-slate-100" style={{ flexShrink: 0, zIndex: 10 }}>
+        <Group justify="space-between" align="center">
+          <Group gap="sm">
+            <ThemeIcon size={40} radius="xl" variant="filled" color="brand" className="shadow-lg shadow-blue-500/10">
+              <ChefHat size={20} strokeWidth={2.5} />
+            </ThemeIcon>
+            <Box>
+              <Text size="md" fw={900} style={{ color: '#0F172A', lineHeight: 1.1 }}>Hệ thống Gọi món</Text>
+              <Text size="11px" c="dimmed" fw={600}>Phục vụ nhanh chóng · Chính xác</Text>
+            </Box>
+          </Group>
 
-      {/* Main layout: left = menu, right = cart */}
-      <Box style={{ flex: 1, display: 'flex', overflow: 'hidden' }}>
-
-        {/* ===== LEFT PANEL: Product Menu ===== */}
-        <Box style={{ flex: 1, display: 'flex', flexDirection: 'column', borderRight: '1px solid #e2e8f0', overflow: 'hidden' }}>
-          {/* Search & Filter bar */}
-          <Box p="md" className="bg-white border-b border-slate-100" style={{ flexShrink: 0 }}>
-            <Group gap="sm" wrap="nowrap">
+          <Group gap="md">
+            {/* Search & Filter Bar unified */}
+            <Group gap="xs" wrap="nowrap" style={{ background: '#F8FAFC', padding: '2px', borderRadius: '100px', border: '1px solid #E1E8F0' }}>
               <TextInput
-                placeholder="Tìm tên món..."
-                leftSection={<Search size={16} />}
+                placeholder="Tìm món ngon..."
+                variant="unstyled"
+                leftSection={<Search size={14} color="var(--brand-primary)" style={{ marginLeft: 8 }} />}
                 value={search}
                 onChange={e => setSearch(e.currentTarget.value)}
-                style={{ flex: 1 }}
-                radius="md"
+                styles={{
+                  input: {
+                    height: 36,
+                    width: 260,
+                    paddingLeft: 36,
+                    fontSize: 13,
+                    fontWeight: 600,
+                    color: '#334155'
+                  }
+                }}
               />
+              <Divider orientation="vertical" h={16} my="auto" color="#E2E8F0" />
               <Select
                 placeholder="Tất cả danh mục"
-                clearable
-                data={categoryList.map((c: any) => ({ value: c.id.toString(), label: c.category_name }))}
+                variant="unstyled"
+                data={categories.map((c) => ({ value: c.id.toString(), label: c.category_name }))}
                 value={filterCat}
                 onChange={setFilterCat}
-                leftSection={<Tag size={16} />}
-                w={180}
-                radius="md"
+                clearable
+                styles={{
+                  input: {
+                    height: 36,
+                    width: 170,
+                    paddingLeft: 10,
+                    fontSize: 13,
+                    fontWeight: 800,
+                    color: 'var(--brand-primary)'
+                  }
+                }}
               />
             </Group>
-          </Box>
 
-          {/* Category quick-filter pills */}
-          <Box px="md" pt="xs" pb="xs" className="bg-white" style={{ flexShrink: 0, borderBottom: '1px solid #f1f5f9' }}>
-            <Group gap="xs" wrap="nowrap" style={{ overflowX: 'auto', paddingBottom: 6 }}>
-              <UnstyledButton
-                onClick={() => setFilterCat(null)}
-                style={{
-                  padding: '6px 16px',
-                  borderRadius: '100px',
-                  fontSize: '13px',
-                  fontWeight: 800,
-                  transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
-                  backgroundColor: !filterCat ? 'var(--brand-primary)' : '#f1f5f9',
-                  color: !filterCat ? 'white' : '#64748b',
-                  boxShadow: !filterCat ? '0 8px 16px -4px var(--brand-primary-soft)' : 'none',
-                }}
+            {cartCount > 0 && (
+              <Badge
+                size="xl"
+                variant="filled"
+                color="brand"
+                radius="xl"
+                h={36} px="lg"
+                leftSection={<ShoppingCart size={16} strokeWidth={2.5} />}
+                className="shadow-sm"
+                style={{ fontSize: 13, fontWeight: 900 }}
               >
-                Tất cả
-              </UnstyledButton>
-              {categoryList.map((c: any) => (
-                <UnstyledButton
-                  key={c.id}
-                  onClick={() => setFilterCat(filterCat === c.id.toString() ? null : c.id.toString())}
-                  style={{
-                    padding: '6px 16px',
-                    borderRadius: '100px',
-                    fontSize: '13px',
-                    fontWeight: 800,
-                    transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
-                    backgroundColor: filterCat === c.id.toString() ? 'var(--brand-primary)' : '#f1f5f9',
-                    color: filterCat === c.id.toString() ? 'white' : '#64748b',
-                    boxShadow: filterCat === c.id.toString() ? '0 8px 16px -4px var(--brand-primary-soft)' : 'none',
-                    whiteSpace: 'nowrap',
-                  }}
-                >
-                  {c.category_name}
-                </UnstyledButton>
-              ))}
-            </Group>
-          </Box>
+                {formatCurrency(cartTotal)}
+              </Badge>
+            )}
+          </Group>
+        </Group>
+      </Box>
 
+      {/* Main layout: left = menu, right = cart */}
+      <Box style={{ flex: 1, display: 'flex', overflow: 'hidden', background: '#F8FAFC' }}>
+
+        {/* ===== LEFT PANEL: Product Menu ===== */}
+        <Box style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
           {/* Product grid */}
-          <ScrollArea style={{ flex: 1 }} p="md">
-            {filteredProducts.length === 0 ? (
-              <Center h={200}>
+          <ScrollArea style={{ flex: 1 }} p="xl">
+            {paginatedProducts.length === 0 ? (
+              <Center h={400}>
                 <Stack align="center" gap="xs">
-                  <Utensils size={36} className="text-slate-300" />
-                  <Text c="dimmed" fw={600}>Không tìm thấy món nào</Text>
+                  <Box p="xl" style={{ borderRadius: '50%', background: '#F1F5F9' }}>
+                    <Utensils size={48} className="text-slate-300" />
+                  </Box>
+                  <Text c="dimmed" fw={800} size="lg">Không tìm thấy món nào</Text>
+                  <Text c="dimmed" size="sm">Thử tìm kiếm với từ khóa khác nhé!</Text>
                 </Stack>
               </Center>
             ) : (
-              <SimpleGrid cols={{ base: 2, sm: 3, lg: 4 }} spacing="sm">
-                {filteredProducts.map((product: any) => {
-                  const inCart = cart.find(i => i.product_id === product.id);
-                  const price = Number(product.discount_price || product.price);
-                  return (
-                    <Indicator
-                      key={product.id}
-                      label={inCart ? `×${inCart.quantity}` : ''}
-                      disabled={!inCart}
-                      color="brand"
-                      size={20}
-                      position="top-end"
-                      offset={6}
-                    >
-                      <UnstyledButton
-                        onClick={() => addToCart(product)}
-                        style={{ width: '100%' }}
+              <Stack gap="xl">
+                <SimpleGrid cols={{ base: 2, sm: 3, md: 4, xl: 4 }} spacing="lg">
+                  {paginatedProducts.map((product: Product) => {
+                    const inCart = cart.find(i => i.product_id === product.id);
+                    const price = Number(product.discount_price || product.price);
+                    return (
+                      <Indicator
+                        key={product.id}
+                        label={inCart ? `×${inCart.quantity}` : ''}
+                        disabled={!inCart}
+                        color="brand"
+                        size={24}
+                        position="top-end"
+                        offset={6}
+                        withBorder
+                        styles={{ indicator: { fontWeight: 900 } }}
                       >
-                        <Card
-                          withBorder
-                          radius="lg"
-                          p="xs"
-                          className={`hover:shadow-lg transition-all cursor-pointer group ${inCart ? 'border-brand bg-brand-soft/50' : 'border-slate-200 hover:border-brand bg-white'}`}
+                        <UnstyledButton
+                          onClick={() => addToCart(product)}
+                          style={{ width: '100%' }}
                         >
-                          <Card.Section mb="xs">
-                            {product.image_url ? (
-                              <Image
-                                src={product.image_url}
-                                alt={product.product_name}
-                                h={100}
-                                radius="md"
-                                style={{ objectFit: 'cover' }}
-                              />
-                            ) : (
-                              <Center h={100} className="bg-slate-50 rounded-lg">
-                                <Utensils size={28} className="text-slate-300" />
-                              </Center>
-                            )}
-                          </Card.Section>
-                          <Text size="sm" fw={700} lineClamp={1} className="text-slate-800">
-                            {product.product_name}
-                          </Text>
-                          <Group justify="space-between" align="center" mt={4}>
-                            <Stack gap={0}>
-                              <Text size="sm" fw={900} c="brand">
-                                {VND(price)}
-                              </Text>
-                              {product.discount_price && (
-                                <Text size="xs" c="dimmed" td="line-through">
-                                  {VND(Number(product.price))}
-                                </Text>
+                          <Card
+                            radius="24px"
+                            p={0}
+                            className={`hover:shadow-2xl hover:-translate-y-2 transition-all cursor-pointer group border-0 ${inCart ? 'ring-2 ring-brand ring-offset-2' : ''}`}
+                            style={{
+                              background: 'white',
+                              overflow: 'hidden'
+                            }}
+                          >
+                            <Box style={{ position: 'relative', height: 160 }}>
+                              {product.image_url ? (
+                                <Image
+                                  src={product.image_url}
+                                  alt={product.product_name}
+                                  h="100%"
+                                  radius="0"
+                                  style={{ objectFit: 'cover' }}
+                                  className="group-hover:scale-110 transition-transform duration-700"
+                                />
+                              ) : (
+                                <Center h="100%" className="bg-slate-50">
+                                  <Utensils size={40} className="text-slate-200" />
+                                </Center>
                               )}
+                              {/* Overlay gradient */}
+                              <Box
+                                style={{
+                                  position: 'absolute',
+                                  bottom: 0,
+                                  left: 0,
+                                  right: 0,
+                                  height: '60%',
+                                  background: 'linear-gradient(to top, rgba(0,0,0,0.6), transparent)'
+                                }}
+                              />
+                              <Badge
+                                variant="filled"
+                                color="brand"
+                                size="sm"
+                                radius="sm"
+                                style={{ position: 'absolute', top: 12, right: 12, fontWeight: 800 }}
+                              >
+                                {categories.find((c: Category) => c.id.toString() === product.category_id?.toString())?.category_name || 'Món'}
+                              </Badge>
+                            </Box>
+
+                            <Stack p="md" gap={4}>
+                              <Text size="sm" fw={800} lineClamp={1} className="text-slate-800">
+                                {product.product_name}
+                              </Text>
+                              <Group justify="space-between" align="center">
+                                <Stack gap={0}>
+                                  <Text size="md" fw={900} c="brand">
+                                    {formatCurrency(price)}
+                                  </Text>
+                                  {product.discount_price && (
+                                    <Text size="10px" c="dimmed" td="line-through" fw={600}>
+                                      {formatCurrency(Number(product.price))}
+                                    </Text>
+                                  )}
+                                </Stack>
+                                <ActionIcon
+                                  size={32}
+                                  radius="xl"
+                                  variant={inCart ? 'filled' : 'light'}
+                                  color="brand"
+                                  className="group-hover:scale-110 transition-transform shadow-sm"
+                                >
+                                  <Plus size={16} strokeWidth={3} />
+                                </ActionIcon>
+                              </Group>
                             </Stack>
-                            <ThemeIcon
-                              size={28}
-                              radius="md"
-                              variant={inCart ? 'filled' : 'light'}
-                              color="brand"
-                              className="group-hover:scale-110 transition-transform"
-                            >
-                              <Plus size={14} />
-                            </ThemeIcon>
-                          </Group>
-                        </Card>
-                      </UnstyledButton>
-                    </Indicator>
-                  );
-                })}
-              </SimpleGrid>
+                          </Card>
+                        </UnstyledButton>
+                      </Indicator>
+                    );
+                  })}
+                </SimpleGrid>
+
+                {totalPages > 1 && (
+                  <Group justify="center" pb="xl">
+                    <Pagination
+                      total={totalPages}
+                      value={page}
+                      onChange={setPage}
+                      color="brand"
+                      radius="xl"
+                      withEdges
+                      styles={{ control: { border: '1px solid #E2E8F0', fontWeight: 800 } }}
+                    />
+                  </Group>
+                )}
+              </Stack>
             )}
           </ScrollArea>
         </Box>
 
-        {/* ===== RIGHT PANEL: Cart & Order Info ===== */}
+        {/* ===== RIGHT PANEL: Cart & Order Info (FIXED) ===== */}
         <Box
+          w={420}
+          className="bg-slate-50 border-l border-slate-200 shadow-sm"
           style={{
-            width: 380,
-            flexShrink: 0,
             display: 'flex',
             flexDirection: 'column',
-            backgroundColor: '#f8fafc',
+            zIndex: 5
           }}
         >
-          {/* Cart header */}
-          <Box px="md" pt="md" pb="sm" className="bg-white border-b border-slate-200" style={{ flexShrink: 0 }}>
-            <Group justify="space-between">
-              <Group gap="xs">
-                <ShoppingCart size={20} className="text-brand" />
-                <Text fw={800} size="md" className="text-brand">Giỏ hàng</Text>
-                <Badge size="sm" color="brand" variant="filled">{cartCount}</Badge>
+          {/* Service Type & Table Selection at Top */}
+          <Box p="xl" className="bg-white border-b border-slate-100" style={{ flexShrink: 0 }}>
+            <Stack gap="md">
+              <Group justify="space-between" mb={-4}>
+                <Text size="xs" fw={800} c="dimmed" tt="uppercase">Hình thức phục vụ</Text>
+                <Badge color="brand" variant="light" radius="sm" size="xs" fw={800}>#NEW_ORDER</Badge>
               </Group>
-              {cart.length > 0 && (
-                <Button
-                  size="xs"
-                  variant="subtle"
-                  color="red"
-                  leftSection={<Trash2 size={14} />}
-                  onClick={() => setCart([])}
-                >
-                  Xoá hết
-                </Button>
-              )}
-            </Group>
-          </Box>
 
-          {/* Cart items */}
-          <ScrollArea style={{ flex: 1 }} p="sm">
-            {cart.length === 0 ? (
-              <Center h={160}>
-                <Stack align="center" gap="xs">
-                  <ShoppingCart size={36} className="text-slate-300" />
-                  <Text c="dimmed" size="sm" fw={600}>Chưa có món nào</Text>
-                  <Text c="dimmed" size="xs">Chọn món từ thực đơn bên trái</Text>
-                </Stack>
-              </Center>
-            ) : (
-              <Stack gap="xs">
-                {cart.map(item => (
-                  <Paper key={item.product_id} withBorder radius="md" p="sm" className="bg-white">
-                    <Group justify="space-between" wrap="nowrap">
-                      <Group gap="xs" wrap="nowrap" style={{ flex: 1, minWidth: 0 }}>
-                        {item.image_url ? (
-                          <Image src={item.image_url} w={36} h={36} radius="sm" style={{ objectFit: 'cover', flexShrink: 0 }} alt="" />
-                        ) : (
-                          <Center w={36} h={36} className="bg-slate-100 rounded-sm" style={{ flexShrink: 0 }}>
-                            <Utensils size={14} className="text-slate-400" />
-                          </Center>
-                        )}
-                        <Stack gap={0} style={{ minWidth: 0 }}>
-                          <Text size="sm" fw={700} lineClamp={1}>{item.product_name}</Text>
-                          <Text size="xs" c="brand" fw={600}>{VND(item.unit_price)}</Text>
-                        </Stack>
-                      </Group>
-                      <Group gap={4} wrap="nowrap">
-                        <ActionIcon size="sm" variant="light" color="brand" radius="md" onClick={() => updateQty(item.product_id, -1)}>
-                          <Minus size={12} />
-                        </ActionIcon>
-                        <Text fw={800} w={24} ta="center" size="sm">{item.quantity}</Text>
-                        <ActionIcon size="sm" variant="light" color="brand" radius="md" onClick={() => updateQty(item.product_id, 1)}>
-                          <Plus size={12} />
-                        </ActionIcon>
-                        <ActionIcon size="sm" variant="subtle" color="red" radius="md" onClick={() => removeFromCart(item.product_id)}>
-                          <X size={12} />
-                        </ActionIcon>
-                      </Group>
-                    </Group>
-                    <Text size="xs" c="dimmed" ta="right" mt={4} fw={600}>
-                      = {VND(item.unit_price * item.quantity)}
-                    </Text>
-                  </Paper>
-                ))}
-              </Stack>
-            )}
-          </ScrollArea>
+              <SegmentedControl
+                fullWidth
+                value={orderType}
+                onChange={(val) => setOrderType(val as OrderType)}
+                data={[
+                  { label: 'Ăn tại bàn', value: 'dine-in' },
+                  { label: 'Mang đi', value: 'take-away' },
+                ]}
+                radius="xl"
+                color="brand"
+                size="md"
+                styles={{
+                  root: { background: '#F1F5F9', padding: 4 },
+                  indicator: { boxShadow: '0 4px 12px rgba(0,0,0,0.1)' },
+                  label: { fontWeight: 800 }
+                }}
+              />
 
-          {/* Order info & Confirm */}
-          <Box p="md" className="bg-white border-t border-slate-200" style={{ flexShrink: 0 }}>
-            <Stack gap="sm">
-              {/* Order Type */}
-              <Stack gap={4}>
-                <Text size="sm" fw={700}>Hình thức phục vụ</Text>
-                <SegmentedControl
-                  fullWidth
-                  value={orderType}
-                  onChange={setOrderType}
-                  data={[
-                    { label: 'Ăn tại bàn', value: 'dine-in' },
-                    { label: 'Mang đi', value: 'take-away' },
-                  ]}
-                  radius="md"
-                  color="brand"
-                />
-              </Stack>
-
-              {/* Table selection - only if dine-in */}
               {orderType === 'dine-in' && (
                 <Select
-                  label="Bàn số"
                   placeholder={tablesLoading ? "Đang tải danh sách bàn..." : "Chọn bàn phục vụ"}
-                  clearable
-                  leftSection={tablesLoading ? <Loader size={14} /> : <Utensils size={16} />}
-                  data={tables.map((t: any) => ({
+                  data={tables.map((t: Table) => ({
                     value: t.id.toString(),
                     label: `${t.table_name} ${t.table_status === 'occupied' ? '🔴' : '🟢'}`,
                     disabled: t.table_status === 'occupied',
                   }))}
                   value={tableId}
                   onChange={setTableId}
-                  radius="md"
-                  size="sm"
-                  rightSection={tablesLoading ? <Loader size={14} color="brand" /> : null}
-                  error={orderType === 'dine-in' && !tableId && cart.length > 0 ? 'Vui lòng chọn bàn' : null}
+                  radius="lg"
+                  size="md"
+                  leftSection={<Utensils size={18} className="text-brand" />}
+                  styles={{
+                    input: { fontWeight: 800, border: '2px solid #F1F5F9', background: 'white' },
+                  }}
                 />
               )}
+            </Stack>
+          </Box>
 
-              {/* Customer */}
-              <SimpleGrid cols={2} spacing="xs">
-                <TextInput
-                  label="Tên khách"
-                  placeholder="Nguyen Van A"
-                  leftSection={<User size={14} />}
-                  value={customerName}
-                  onChange={e => setCustomerName(e.currentTarget.value)}
-                  radius="md"
-                  size="sm"
-                />
-                <TextInput
-                  label="Số điện thoại"
-                  placeholder="09xx..."
-                  value={customerPhone}
-                  onChange={e => setCustomerPhone(e.currentTarget.value)}
-                  radius="md"
-                  size="sm"
-                />
-              </SimpleGrid>
+          {/* Cart items */}
+          <ScrollArea style={{ flex: 1 }} px="xl" py="xs">
+            {cart.length === 0 ? (
+              <Center h="100%" style={{ opacity: 0.5 }}>
+                <Stack align="center" gap="md">
+                  <Box p="xl" style={{ borderRadius: '50%', background: '#F1F5F9' }}>
+                    <ShoppingBag size={48} className="text-slate-300" />
+                  </Box>
+                  <Text fw={800} size="sm" c="dimmed">Giỏ hàng của bạn đang trống</Text>
+                  <Text size="xs" c="dimmed" ta="center">Chọn món yêu thích để bắt đầu!</Text>
+                </Stack>
+              </Center>
+            ) : (
+              <Stack gap="sm" pb="xl">
+                {cart.map((item) => (
+                  <Card key={item.product_id} radius="xl" p="sm" withBorder className="border-slate-100 hover:shadow-md transition-shadow">
+                    <Group wrap="nowrap" gap="md">
+                      {item.image_url ? (
+                        <Image src={item.image_url} w={64} h={64} radius="lg" style={{ objectFit: 'cover' }} />
+                      ) : (
+                        <Center w={64} h={64} style={{ borderRadius: "50%" }} className="bg-slate-50">
+                          <ChefHat size={20} className="text-slate-300" />
+                        </Center>
+                      )}
 
-              {/* Note */}
-              <Textarea
-                label="Ghi chú"
-                placeholder="Không hành, ít cay, dị ứng..."
-                leftSection={<StickyNote size={14} />}
-                value={note}
-                onChange={e => setNote(e.currentTarget.value)}
-                radius="md"
-                size="sm"
-                minRows={2}
-                autosize
-              />
+                      <Box style={{ flex: 1 }}>
+                        <Group justify="space-between" align="flex-start" wrap="nowrap">
+                          <Text fw={800} size="sm" lineClamp={1} className="text-slate-800">{item.product_name}</Text>
+                          <ActionIcon variant="subtle" color="red" size="sm" onClick={() => removeFromCart(item.product_id)}>
+                            <X size={14} />
+                          </ActionIcon>
+                        </Group>
+                        <Group justify="space-between" align="center" mt={4}>
+                          <Text fw={900} c="brand" size="md">{formatCurrency(item.unit_price * item.quantity)}</Text>
+                          <Group gap={4}>
+                            <ActionIcon
+                              variant="light"
+                              color="slate"
+                              size="sm"
+                              radius="xl"
+                              onClick={() => updateQty(item.product_id, -1)}
+                            >
+                              <Minus size={12} strokeWidth={3} />
+                            </ActionIcon>
+                            <Text fw={900} size="sm" w={24} ta="center">{item.quantity}</Text>
+                            <ActionIcon
+                              variant="filled"
+                              color="brand"
+                              size="sm"
+                              radius="xl"
+                              onClick={() => updateQty(item.product_id, 1)}
+                            >
+                              <Plus size={12} strokeWidth={3} />
+                            </ActionIcon>
+                          </Group>
+                        </Group>
+                      </Box>
+                    </Group>
+                  </Card>
+                ))}
+              </Stack>
+            )}
+          </ScrollArea>
 
-              <Divider />
-
-              {/* Total */}
-              <Group justify="space-between">
-                <Text fw={700} c="dimmed">Tổng cộng</Text>
-                <Text fw={900} size="xl" c="brand">{VND(cartTotal)}</Text>
+          {/* Confirm & Order Summary at Bottom */}
+          <Box p="xl" className="bg-white border-t border-slate-100" style={{ flexShrink: 0, background: '#FFFFFF', borderTop: '2px solid #F1F5F9' }}>
+            <Stack gap="md">
+              <Group justify="space-between" align="center">
+                <Stack gap={0}>
+                  <Group gap="xs">
+                    <ShoppingCart size={18} className="text-brand" strokeWidth={2.5} />
+                    <Text fw={900} size="md" className="text-slate-800">Tóm tắt đơn hàng</Text>
+                  </Group>
+                  <Text size="xs" c="dimmed" fw={700}>Phục vụ {orderType === 'dine-in' ? 'tại chỗ' : 'mang về'} · {cartCount} món</Text>
+                </Stack>
+                {cart.length > 0 && (
+                  <Button
+                    variant="subtle"
+                    color="red"
+                    size="compact-xs"
+                    onClick={clearCart}
+                    leftSection={<Trash2 size={12} />}
+                    fw={800}
+                    radius="md"
+                  >
+                    Xóa tất cả
+                  </Button>
+                )}
               </Group>
 
-              {/* Confirm Button */}
-              <Button
-                fullWidth
-                size="md"
-                radius="md"
-                color="brand"
-                variant="filled"
-                leftSection={<CheckCircle2 size={18} />}
-                disabled={cart.length === 0 || (orderType === 'dine-in' && !tableId)}
-                onClick={() => setPaymentModalOpen(true)}
-                className="shadow-md"
-              >
-                {cart.length === 0 ? 'Chọn món trước' : `Thanh toán · ${VND(cartTotal)}`}
-              </Button>
+              <Divider color="#F1F5F9" />
+
+              {/* Total & Action */}
+              <Group gap="xl" align="center" mt={4}>
+                <Stack gap={0}>
+                  <Text fw={800} c="dimmed" size="10px">CẦN THANH TOÁN</Text>
+                  <Text fw={900} size="24px" c="brand" style={{ lineHeight: 1 }}>{formatCurrency(cartTotal)}</Text>
+                </Stack>
+
+                <Button
+                  size="lg"
+                  radius="xl"
+                  loading={isCreatingOrder}
+                  disabled={cart.length === 0 || (orderType === 'dine-in' && !tableId)}
+                  onClick={() => {
+                    if (orderType === 'dine-in') {
+                      handleConfirmOrder();
+                    } else {
+                      setPaymentModalOpen(true);
+                    }
+                  }}
+                  color="brand"
+                  px="lg"
+                  style={{
+                    height: 48,
+                    fontWeight: 900,
+                    boxShadow: '0 6px 12px -4px var(--brand-primary-soft)',
+                    flex: 1 
+                  }}
+                  leftSection={orderType === 'dine-in' ? <CheckCircle2 size={18} strokeWidth={2.5} /> : <CreditCard size={18} strokeWidth={2.5} />}
+                >
+                  {orderType === 'dine-in' ? 'Xác nhận bàn' : 'Thanh toán'}
+                </Button>
+              </Group>
 
               {cart.length > 0 && (
-                <Text size="xs" c="dimmed" ta="center">
-                  <Receipt size={12} style={{ display: 'inline', marginRight: 4 }} />
-                  Đơn sẽ được báo bếp ngay sau khi thanh toán
+                <Text size="10px" c="dimmed" ta="center" fw={600} style={{ opacity: 0.7 }}>
+                  * Bằng việc nhấn thanh toán, đơn hàng sẽ được gửi trực tiếp đến khu vực bếp
                 </Text>
               )}
             </Stack>
@@ -549,61 +479,15 @@ export default function POSPage() {
           <Paper p="md" radius="md" bg="brand-soft" className="border border-brand-soft">
             <Stack gap={4} align="center">
               <Text c="brand" fw={600} size="sm">Số tiền cần thu</Text>
-              <Text fw={900} size="36px" c="brand" style={{ lineHeight: 1 }}>{VND(cartTotal)}</Text>
+              <Text fw={900} size="36px" c="brand" style={{ lineHeight: 1 }}>{formatCurrency(cartTotal)}</Text>
             </Stack>
           </Paper>
 
-          {/* Payment Method Cards */}
-          <Stack gap="xs">
-            <Text size="sm" fw={700} className="text-slate-700">Hình thức thanh toán:</Text>
-            <SimpleGrid cols={2} spacing="sm">
-              {/* Cash Button */}
-              <UnstyledButton
-                onClick={() => setSelectedPayment('cash')}
-                className={`p-4 rounded-xl border-2 transition-all ${selectedPayment === 'cash'
-                    ? 'border-brand bg-brand-soft shadow-md'
-                    : 'border-slate-200 hover:border-brand bg-white hover:bg-slate-50'
-                  }`}
-              >
-                <Stack align="center" gap="sm">
-                  <ThemeIcon
-                    size={48}
-                    radius="xl"
-                    variant={selectedPayment === 'cash' ? 'filled' : 'light'}
-                    color={selectedPayment === 'cash' ? 'brand' : 'gray'}
-                  >
-                    <Receipt size={24} />
-                  </ThemeIcon>
-                  <Text ta="center" fw={selectedPayment === 'cash' ? 800 : 600} size="sm" c={selectedPayment === 'cash' ? 'blue.9' : 'slate.7'}>
-                    Tiền mặt
-                  </Text>
-                </Stack>
-              </UnstyledButton>
-
-              {/* Transfer Button */}
-              <UnstyledButton
-                onClick={() => setSelectedPayment('transfer')}
-                className={`p-4 rounded-xl border-2 transition-all ${selectedPayment === 'transfer'
-                    ? 'border-brand bg-brand-soft shadow-md'
-                    : 'border-slate-200 hover:border-brand bg-white hover:bg-slate-50'
-                  }`}
-              >
-                <Stack align="center" gap="sm">
-                  <ThemeIcon
-                    size={48}
-                    radius="xl"
-                    variant={selectedPayment === 'transfer' ? 'filled' : 'light'}
-                    color={selectedPayment === 'transfer' ? 'brand' : 'gray'}
-                  >
-                    <CreditCard size={24} />
-                  </ThemeIcon>
-                  <Text ta="center" fw={selectedPayment === 'transfer' ? 800 : 600} size="sm" c={selectedPayment === 'transfer' ? 'blue.9' : 'slate.7'}>
-                    Chuyển khoản (Ví)
-                  </Text>
-                </Stack>
-              </UnstyledButton>
-            </SimpleGrid>
-          </Stack>
+          {/* Payment Method Selection */}
+          <PaymentMethodSelect 
+            value={selectedPayment} 
+            onChange={setSelectedPayment} 
+          />
 
           {/* Actions */}
           <Group grow mt="xs">
@@ -619,9 +503,9 @@ export default function POSPage() {
             <Button
               size="lg"
               radius="md"
-              loading={createOrder.isPending}
+              loading={isCreatingOrder}
               color="brand"
-              onClick={() => createOrder.mutate()}
+              onClick={() => handleConfirmOrder()}
               leftSection={<CheckCircle2 size={20} />}
               className="shadow-lg shadow-blue-500/30"
               fw={800}
@@ -631,7 +515,6 @@ export default function POSPage() {
           </Group>
         </Stack>
       </Modal>
-
     </Box>
   );
 }

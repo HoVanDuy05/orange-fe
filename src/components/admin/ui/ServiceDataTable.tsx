@@ -3,7 +3,12 @@ import { Table, Card, Text, LoadingOverlay, ScrollArea, Box, Center, Stack } fro
 import { Inbox } from 'lucide-react';
 
 interface DataTableProps<T> {
-  columns: { key: string; label: string; width?: string | number }[];
+  columns: { 
+    key: string; 
+    label: string; 
+    width?: string | number;
+    align?: 'left' | 'center' | 'right';
+  }[];
   data: T[];
   isLoading?: boolean;
   emptyMessage?: string;
@@ -31,17 +36,24 @@ export const ServiceDataTable = <T extends Record<string, any>>({
         <Table verticalSpacing="sm" horizontalSpacing="xl" highlightOnHover striped withColumnBorders={false}>
           <Table.Thead 
             style={{ 
-              background: '#F8FAFC', 
+              background: '#F1F5F9', 
               position: 'sticky', 
               top: 0, 
               zIndex: 10,
-              borderBottom: '1px solid #E2E8F0'
+              borderBottom: '2px solid #E2E8F0'
             }}
           >
             <Table.Tr>
               {columns.map((col) => (
-                <Table.Th key={col.key} style={{ width: col.width, borderBottom: '1px solid #E2E8F0' }}>
-                  <Text size="xs" fw={800} tt="uppercase" c="gray.7" style={{ letterSpacing: '0.05em' }}>
+                <Table.Th 
+                  key={col.key} 
+                  style={{ 
+                    width: col.width, 
+                    borderBottom: '1px solid #E2E8F0',
+                    textAlign: col.align || 'center'
+                  }}
+                >
+                  <Text size="xs" fw={900} tt="uppercase" c="gray.8" style={{ letterSpacing: '0.08em' }}>
                     {col.label}
                   </Text>
                 </Table.Th>
@@ -51,7 +63,7 @@ export const ServiceDataTable = <T extends Record<string, any>>({
           <Table.Tbody>
             {data.length === 0 && !isLoading ? (
               <Table.Tr>
-                <Table.Td colSpan={columns.length} p="xl">
+                <Table.Td colSpan={columns.length} p="xl" style={{ textAlign: 'center' }}>
                   <Center h={100}>
                     <Stack align="center" gap="xs">
                        <Box style={{ color: '#94A3B8' }}><Inbox size={32} /></Box>
@@ -65,8 +77,8 @@ export const ServiceDataTable = <T extends Record<string, any>>({
                 renderRow ? renderRow(item, index) : (
                   <Table.Tr key={index}>
                     {columns.map((col) => (
-                      <Table.Td key={col.key}>
-                        <Text size="sm" fw={500} style={{ color: '#334155' }}>
+                      <Table.Td key={col.key} style={{ textAlign: col.align || 'center' }}>
+                        <Text size="sm" fw={600} style={{ color: '#334155' }}>
                           {(item as any)[col.key] || '-'}
                         </Text>
                       </Table.Td>

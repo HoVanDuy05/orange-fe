@@ -2,8 +2,9 @@ import {
   LayoutDashboard, ShoppingCart, Package, Tag, TableProperties,
   Image as ImageIcon, Layers, Zap, Settings, Users
 } from 'lucide-react';
+import { AdminNavGroup } from '@/types/menu';
 
-export const ADMIN_NAV_GROUPS = [
+export const ADMIN_NAV_GROUPS: AdminNavGroup[] = [
   {
     label: 'Tổng quan',
     items: [

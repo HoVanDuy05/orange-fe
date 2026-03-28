@@ -14,21 +14,8 @@ interface PageHeaderProps {
 export const PageHeader = ({ title, description, actions, breadcrumbs }: PageHeaderProps) => {
   return (
     <Stack gap="xs" mb="xl">
-      {breadcrumbs && (
-        <Breadcrumbs separator={<ChevronRight size={12} />} separatorMargin="xs">
-          {breadcrumbs.map((item, index) => (
-            item.href ? (
-              <Anchor component={Link} href={item.href} key={index} size="xs" c="dimmed" fw={500}>
-                {item.label}
-              </Anchor>
-            ) : (
-              <Text key={index} size="xs" c="gray.6" fw={600}>
-                {item.label}
-              </Text>
-            )
-          ))}
-        </Breadcrumbs>
-      )}
+      {/* Breadcrumbs removed as per user request */}
+
 
       <Group justify="space-between" align="flex-end" wrap="nowrap">
         <Box>

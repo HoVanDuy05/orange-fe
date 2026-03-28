@@ -6,7 +6,7 @@ import https from '@/api/https';
 import { 
   Title, Button, Group, ActionIcon, Modal, TextInput, NumberInput, 
   Card, Center, Loader, Text, Badge, Stack, SimpleGrid, Select, 
-  Paper
+  Paper, Box
 } from '@mantine/core';
 import { DateInput } from '@mantine/dates';
 import { useDisclosure } from '@mantine/hooks';
@@ -187,70 +187,72 @@ export default function StockPage() {
   const totalInvCost = stockData.reduce((acc: number, item: any) => acc + Number(item.cost), 0);
 
   return (
-    <Stack gap="xl" p="md">
-      <Group justify="space-between" align="center">
-         <Stack gap={2}>
-            <AppTitle level={1}>Quản lý Nhập Kho</AppTitle>
-            <Text size="md" c="dimmed" fw={500}>Kiểm kê hàng hóa và quản lý chi tiêu định kỳ</Text>
-         </Stack>
-         <Button leftSection={<Plus size={18} />} variant="filled" color="brand" onClick={open} size="lg" radius="md">
-           Tạo phiếu nhập mới
-         </Button>
-      </Group>
+    <Box p={{ base: 'md', sm: 'xl' }}>
+      <Stack gap="xl">
+        <Group justify="space-between" align="center">
+           <Stack gap={2}>
+              <AppTitle level={1}>Quản lý Nhập Kho</AppTitle>
+              <Text size="md" c="dimmed" fw={500}>Kiểm kê hàng hóa và quản lý chi tiêu định kỳ</Text>
+           </Stack>
+           <Button leftSection={<Plus size={18} />} variant="filled" color="brand" onClick={open} size="lg" radius="md">
+             Tạo phiếu nhập mới
+           </Button>
+        </Group>
 
-      <SimpleGrid cols={{ base: 1, sm: 2 }} spacing="xl">
-        <Paper withBorder radius="lg" p="xl" className="border-l-8 border-l-brand shadow-xl bg-white">
-           <Group justify="space-between">
-              <Stack gap={0}>
-                <Text size="sm" tt="uppercase" fw={800} c="dimmed">Tổng Chi Phí Tháng Này</Text>
-                <Title order={1} className="text-blue-900 text-3xl mt-1">
-                   {new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(totalInvCost)}
-                </Title>
-              </Stack>
-              <ShoppingCart size={40} className="text-blue-100" />
-           </Group>
-        </Paper>
+        <SimpleGrid cols={{ base: 1, sm: 2 }} spacing="xl">
+          <Paper withBorder radius="lg" p="xl" className="border-l-8 border-l-brand shadow-xl bg-white">
+             <Group justify="space-between">
+                <Stack gap={0}>
+                  <Text size="sm" tt="uppercase" fw={800} c="dimmed">Tổng Chi Phí Tháng Này</Text>
+                  <Title order={1} className="text-blue-900 text-3xl mt-1">
+                     {new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(totalInvCost)}
+                  </Title>
+                </Stack>
+                <ShoppingCart size={40} className="text-blue-100" />
+             </Group>
+          </Paper>
 
-        <Paper withBorder radius="lg" p="xl" className="border-l-8 border-l-orange-500 shadow-xl bg-white">
-           <Group justify="space-between">
-              <Stack gap={0}>
-                <Text size="sm" tt="uppercase" fw={800} c="dimmed">Số Lượng Phiếu Nhập</Text>
-                <Title order={1} className="text-orange-900 text-3xl mt-1">{stockData.length} Phiếu</Title>
-              </Stack>
-              <FileText size={40} className="text-orange-100" />
-           </Group>
-        </Paper>
-      </SimpleGrid>
+          <Paper withBorder radius="lg" p="xl" className="border-l-8 border-l-orange-500 shadow-xl bg-white">
+             <Group justify="space-between">
+                <Stack gap={0}>
+                  <Text size="sm" tt="uppercase" fw={800} c="dimmed">Số Lượng Phiếu Nhập</Text>
+                  <Title order={1} className="text-orange-900 text-3xl mt-1">{stockData.length} Phiếu</Title>
+                </Stack>
+                <FileText size={40} className="text-orange-100" />
+             </Group>
+          </Paper>
+        </SimpleGrid>
 
-      <Card withBorder radius="xl" shadow="md" p="0" className="bg-white overflow-hidden border-slate-200">
-         <DynamicTable columns={columns} data={stockData} loading={isLoading} />
-      </Card>
+        <Card withBorder radius="xl" shadow="md" p="0" className="bg-white overflow-hidden border-slate-200">
+           <DynamicTable columns={columns} data={stockData} loading={isLoading} />
+        </Card>
 
-      {/* Modal CRUD */}
-      <Modal opened={opened} onClose={handleClose} title={<AppTitle level={3}>{editingStock ? 'CẬP NHẬT PHIẾU NHẬP' : 'TẠO PHIẾU NHẬP MỚI'}</AppTitle>} radius="lg" size="lg" overlayProps={{ backgroundOpacity: 0.55, blur: 5 }}>
-        <form onSubmit={handleSubmit} className="p-2">
-          <Stack gap="lg">
-            <SimpleGrid cols={2}>
-               <DateInput label="Ngày nhập hàng" value={stockDate} onChange={(v) => { if (!v) return setStockDate(null); setStockDate(v as unknown as Date); }} placeholder="Chọn ngày" required valueFormat="DD/MM/YYYY" leftSection={<Calendar size={16} />} />
-               <TextInput label="Người đi mua" placeholder="Nguyễn Văn A" value={buyerName} onChange={(e) => setBuyerName(e.currentTarget.value)} required leftSection={<User size={16} />} />
-            </SimpleGrid>
+        {/* Modal CRUD */}
+        <Modal opened={opened} onClose={handleClose} title={<AppTitle level={3}>{editingStock ? 'CẬP NHẬT PHIẾU NHẬP' : 'TẠO PHIẾU NHẬP MỚI'}</AppTitle>} radius="lg" size="lg" overlayProps={{ backgroundOpacity: 0.55, blur: 5 }}>
+          <form onSubmit={handleSubmit} className="p-2">
+            <Stack gap="lg">
+              <SimpleGrid cols={2}>
+                 <DateInput label="Ngày nhập hàng" value={stockDate} onChange={(v) => { if (!v) return setStockDate(null); setStockDate(v as unknown as Date); }} placeholder="Chọn ngày" required valueFormat="DD/MM/YYYY" leftSection={<Calendar size={16} />} />
+                 <TextInput label="Người đi mua" placeholder="Nguyễn Văn A" value={buyerName} onChange={(e) => setBuyerName(e.currentTarget.value)} required leftSection={<User size={16} />} />
+              </SimpleGrid>
 
-            <TextInput label="Tên hàng hóa/nguyên liệu" placeholder="Vd: Thịt bò tươi..." required value={itemName} onChange={(e) => setItemName(e.currentTarget.value)} leftSection={<Package size={16} />} />
+              <TextInput label="Tên hàng hóa/nguyên liệu" placeholder="Vd: Thịt bò tươi..." required value={itemName} onChange={(e) => setItemName(e.currentTarget.value)} leftSection={<Package size={16} />} />
 
-            <SimpleGrid cols={3}>
-              <NumberInput label="Số lượng" hideControls required value={quantity} onChange={(v) => setQuantity(Number(v))} />
-              <Select label="Đơn vị" data={['Kg', 'Lít', 'Lon', 'Thùng', 'Bó', 'Gói', 'Cái', 'Chai']} value={unit} onChange={setUnit} required />
-              <NumberInput label="Đơn giá nhập" hideControls required thousandSeparator="." decimalSeparator="," suffix=" đ" value={unitPrice} onChange={(v) => setUnitPrice(Number(v))} />
-            </SimpleGrid>
+              <SimpleGrid cols={3}>
+                <NumberInput label="Số lượng" hideControls required value={quantity} onChange={(v) => setQuantity(Number(v))} />
+                <Select label="Đơn vị" data={['Kg', 'Lít', 'Lon', 'Thùng', 'Bó', 'Gói', 'Cái', 'Chai']} value={unit} onChange={setUnit} required />
+                <NumberInput label="Đơn giá nhập" hideControls required thousandSeparator="." decimalSeparator="," suffix=" đ" value={unitPrice} onChange={(v) => setUnitPrice(Number(v))} />
+              </SimpleGrid>
 
-            <TextInput label="Nhà cung cấp" placeholder="Vd: Chợ đầu mối Bình Điền" value={supplier} onChange={(e) => setSupplier(e.currentTarget.value)} leftSection={<Tag size={16} />} />
+              <TextInput label="Nhà cung cấp" placeholder="Vd: Chợ đầu mối Bình Điền" value={supplier} onChange={(e) => setSupplier(e.currentTarget.value)} leftSection={<Tag size={16} />} />
 
-            <Button fullWidth type="submit" loading={saveMutation.isPending} color="brand" size="lg" radius="md" className="shadow-lg">
-              {editingStock ? 'Ghi lại thay đổi' : 'Xác nhận nhập kho'}
-            </Button>
-          </Stack>
-        </form>
-      </Modal>
-    </Stack>
+              <Button fullWidth type="submit" loading={saveMutation.isPending} color="brand" size="lg" radius="md" className="shadow-lg">
+                {editingStock ? 'Ghi lại thay đổi' : 'Xác nhận nhập kho'}
+              </Button>
+            </Stack>
+          </form>
+        </Modal>
+      </Stack>
+    </Box>
   );
 }

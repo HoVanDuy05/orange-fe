@@ -2,10 +2,10 @@ export const ORDER_TABLE_COLUMNS = [
   { key: 'id', label: 'ID / Mã Đơn', width: 140 },
   { key: 'type', label: 'Phân loại', width: 120 },
   { key: 'customer', label: 'Khách hàng', width: 220 },
-  { key: 'amount', label: 'Tổng tiền', width: 140 },
-  { key: 'status', label: 'Trạng thái', width: 160 },
-  { key: 'time', label: 'Thời gian', width: 120 },
-  { key: 'actions', label: 'Hành động', width: 240 },
+  { key: 'amount', label: 'Tổng tiền', width: 140, align: 'right' as const },
+  { key: 'status', label: 'Trạng thái', width: 160, align: 'center' as const },
+  { key: 'time', label: 'Thời gian', width: 120, align: 'center' as const },
+  { key: 'actions', label: 'Thao tác', width: 240, align: 'center' as const },
 ];
 
 export const ORDER_TABS = [

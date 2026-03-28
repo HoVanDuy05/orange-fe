@@ -78,15 +78,9 @@ export function DynamicTable<T extends { id: string | number }>({
 
   const getAlignment = (type?: ColumnType) => {
     switch (type) {
-      case 'price':
-      case 'number':
-        return 'right';
-      case 'date':
-      case 'action':
-        return 'center';
       default:
-        return 'left';
-    };
+        return 'center' as const;
+    }
   };
 
   return (
@@ -120,10 +114,10 @@ export function DynamicTable<T extends { id: string | number }>({
                   className="border-b-2 border-slate-100"
                 >
                   <Stack gap={4}>
-                    <Group gap={4} justify={align === 'right' ? 'flex-end' : align === 'center' ? 'center' : 'flex-start'} wrap="nowrap">
+                    <Group gap={4} justify="center" wrap="nowrap">
                       {col.sortable ? (
                         <UnstyledButton onClick={() => handleSort(String(col.key))} style={{ width: '100%' }}>
-                          <Group gap={4} justify={align === 'right' ? 'flex-end' : align === 'center' ? 'center' : 'flex-start'} wrap="nowrap">
+                          <Group gap={4} justify="center" wrap="nowrap">
                             <Text fw={800} size="sm" tt="uppercase" c="dimmed" style={{ letterSpacing: '0.05em', whiteSpace: 'nowrap' }}>
                               {col.label}
                             </Text>

@@ -7,7 +7,7 @@ export const ordersApi = {
     if (filterStatus) params.append('status', filterStatus);
     if (filterType) params.append('type', filterType);
     const res = await https.get(`/orders?${params.toString()}`);
-    return res.data?.data || [];
+    return res.data?.orders || [];
   },
 
   updateOrderStatus: async ({ id, status, payment_method, cancel_reason }: UpdateOrderStatusParams): Promise<void> => {
