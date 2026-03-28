@@ -128,7 +128,7 @@ export default function OrdersPage() {
             <Table.Tr key={order.id} style={{ opacity: ['completed', 'cancelled'].includes(order.order_status) ? 0.6 : 1 }}>
               <Table.Td>
                 <Stack gap={0}>
-                  <Text fw={800} size="sm" color="blue">#OR-{order.id}</Text>
+                  <Text fw={800} size="sm" color="blue">{order.order_code}</Text>
                   <Text size="10px" fw={700} c="dimmed">MÃ GIAO DỊCH</Text>
                 </Stack>
               </Table.Td>

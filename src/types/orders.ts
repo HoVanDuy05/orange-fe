@@ -1,5 +1,6 @@
 export interface Order {
   id: number;
+  order_code: string;
   order_type: 'dine_in' | 'take_away' | 'delivery';
   customer_name: string | null;
   customer_phone: string | null;

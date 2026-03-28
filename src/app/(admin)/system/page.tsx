@@ -14,7 +14,8 @@ import MediaLibraryModal from '@/components/common/MediaLibraryModal';
 
 export default function SystemPage() {
   const {
-    themes, isLoading, updateTheme
+    state: { themes, isLoading },
+    actions: { updateTheme }
   } = useSystem();
 
   const [opened, setOpened] = useState(false);

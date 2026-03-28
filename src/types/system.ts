@@ -22,5 +22,7 @@ export interface BrandTheme {
   logo_url?: string;
   primary_color: string;
   secondary_color: string;
+  font_family?: string;
+  target_type?: 'admin' | 'client' | 'global';
   active: boolean;
 }

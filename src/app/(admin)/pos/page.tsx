@@ -304,8 +304,7 @@ export default function POSPage() {
                   placeholder={tablesLoading ? "Đang tải danh sách bàn..." : "Chọn bàn phục vụ"}
                   data={tables.map((t: Table) => ({
                     value: t.id.toString(),
-                    label: `${t.table_name} ${t.table_status === 'occupied' ? '🔴' : '🟢'}`,
-                    disabled: t.table_status === 'occupied',
+                    label: t.table_name,
                   }))}
                   value={tableId}
                   onChange={setTableId}
@@ -314,6 +313,32 @@ export default function POSPage() {
                   leftSection={<Utensils size={18} className="text-brand" />}
                   styles={{
                     input: { fontWeight: 800, border: '2px solid #F1F5F9', background: 'white' },
+                  }}
+                  renderOption={({ option, checked }) => {
+                    const table = tables.find(t => t.id.toString() === option.value);
+                    const isOccupied = table?.table_status === 'occupied';
+                    return (
+                      <Group gap="xs" wrap="nowrap" justify="space-between" style={{ flex: 1 }}>
+                        <Group gap="xs">
+                          <Box 
+                            style={{ 
+                              width: 12, 
+                              height: 12, 
+                              borderRadius: '50%', 
+                              background: isOccupied ? 'var(--mantine-color-green-6)' : 'var(--mantine-color-gray-4)',
+                              border: '2px solid white',
+                              boxShadow: '0 0 0 1px #E2E8F0'
+                            }} 
+                          />
+                          <Text size="sm" fw={checked ? 900 : 700} c={checked ? 'brand' : 'gray.8'}>
+                            {option.label}
+                          </Text>
+                        </Group>
+                        {isOccupied && (
+                          <Badge variant="light" color="green" size="xs" radius="sm">CÓ KHÁCH</Badge>
+                        )}
+                      </Group>
+                    );
                   }}
                 />
               )}

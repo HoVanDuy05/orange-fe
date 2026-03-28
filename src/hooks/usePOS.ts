@@ -96,6 +96,38 @@ export function usePOS() {
     },
   });
 
+  // 🔄 Automatic Order Loading Logic
+  const { data: tableOrder, isFetching: loadingTableOrder } = useQuery({
+    queryKey: ['activeOrder', tableId],
+    queryFn: async () => {
+      if (!tableId || orderType !== 'dine-in') return null;
+      const res = await https.get(`/orders/table/${tableId}`);
+      const orders = res.data?.data || [];
+      return orders.length > 0 ? orders[0] : null;
+    },
+    enabled: !!tableId && orderType === 'dine-in',
+    staleTime: 0, // Always get fresh data when switching tables
+  });
+
+  useEffect(() => {
+    if (tableId && tableOrder) {
+      setCart(tableOrder.items.map((i: any) => ({
+        product_id: i.product_id,
+        product_name: i.product_name,
+        unit_price: Number(i.unit_price),
+        quantity: i.quantity,
+        image_url: i.image_url
+      })));
+      setCustomerName(tableOrder.customer_name || '');
+      setCustomerPhone(tableOrder.customer_phone || '');
+      setNote(tableOrder.note || '');
+    } else if (tableId) {
+      // If table is empty, start fresh. 
+      // NOTE: We only clear if switching TO an empty table.
+      clearCart();
+    }
+  }, [tableOrder, tableId]);
+
   // Cart helpers
   const addToCart = (product: Product) => {
     const unitPrice = Number(product.discount_price || product.price);
