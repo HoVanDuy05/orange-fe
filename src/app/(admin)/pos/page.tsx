@@ -167,7 +167,7 @@ export default function POSPage() {
       {/* Header */}
       <Group px="md" py="sm" justify="space-between" className="border-b border-slate-200 bg-white" style={{ flexShrink: 0 }}>
         <Group gap="sm">
-          <ThemeIcon size={40} radius="md" variant="gradient" gradient={{ from: 'blue', to: 'cyan' }}>
+          <ThemeIcon size={40} radius="md" variant="gradient" gradient={{ from: 'brand', to: 'brand.4' }}>
             <ChefHat size={22} />
           </ThemeIcon>
           <Stack gap={0}>
@@ -176,7 +176,7 @@ export default function POSPage() {
           </Stack>
         </Group>
         {cartCount > 0 && (
-          <Badge size="xl" variant="filled" color="blue" radius="md" leftSection={<ShoppingCart size={16} />}>
+          <Badge size="xl" variant="filled" color="brand" radius="md" leftSection={<ShoppingCart size={16} />}>
             {cartCount} món · {VND(cartTotal)}
           </Badge>
         )}
@@ -222,9 +222,9 @@ export default function POSPage() {
                   fontSize: '13px',
                   fontWeight: 800,
                   transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
-                  backgroundColor: !filterCat ? '#2563eb' : '#f1f5f9',
+                  backgroundColor: !filterCat ? 'var(--brand-primary)' : '#f1f5f9',
                   color: !filterCat ? 'white' : '#64748b',
-                  boxShadow: !filterCat ? '0 8px 16px -4px rgba(37, 99, 235, 0.3)' : 'none',
+                  boxShadow: !filterCat ? '0 8px 16px -4px var(--brand-primary-soft)' : 'none',
                 }}
               >
                 Tất cả
@@ -239,9 +239,9 @@ export default function POSPage() {
                     fontSize: '13px',
                     fontWeight: 800,
                     transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
-                    backgroundColor: filterCat === c.id.toString() ? '#2563eb' : '#f1f5f9',
+                    backgroundColor: filterCat === c.id.toString() ? 'var(--brand-primary)' : '#f1f5f9',
                     color: filterCat === c.id.toString() ? 'white' : '#64748b',
-                    boxShadow: filterCat === c.id.toString() ? '0 8px 16px -4px rgba(37, 99, 235, 0.3)' : 'none',
+                    boxShadow: filterCat === c.id.toString() ? '0 8px 16px -4px var(--brand-primary-soft)' : 'none',
                     whiteSpace: 'nowrap',
                   }}
                 >
@@ -270,7 +270,7 @@ export default function POSPage() {
                       key={product.id}
                       label={inCart ? `×${inCart.quantity}` : ''}
                       disabled={!inCart}
-                      color="blue"
+                      color="brand"
                       size={20}
                       position="top-end"
                       offset={6}
@@ -283,7 +283,7 @@ export default function POSPage() {
                           withBorder
                           radius="lg"
                           p="xs"
-                          className={`hover:shadow-lg transition-all cursor-pointer group ${inCart ? 'border-blue-400 bg-blue-50/50' : 'border-slate-200 hover:border-blue-300 bg-white'}`}
+                          className={`hover:shadow-lg transition-all cursor-pointer group ${inCart ? 'border-brand bg-brand-soft/50' : 'border-slate-200 hover:border-brand bg-white'}`}
                         >
                           <Card.Section mb="xs">
                             {product.image_url ? (
@@ -305,7 +305,7 @@ export default function POSPage() {
                           </Text>
                           <Group justify="space-between" align="center" mt={4}>
                             <Stack gap={0}>
-                              <Text size="sm" fw={900} c="blue">
+                              <Text size="sm" fw={900} c="brand">
                                 {VND(price)}
                               </Text>
                               {product.discount_price && (
@@ -318,7 +318,7 @@ export default function POSPage() {
                               size={28}
                               radius="md"
                               variant={inCart ? 'filled' : 'light'}
-                              color="blue"
+                              color="brand"
                               className="group-hover:scale-110 transition-transform"
                             >
                               <Plus size={14} />
@@ -348,9 +348,9 @@ export default function POSPage() {
           <Box px="md" pt="md" pb="sm" className="bg-white border-b border-slate-200" style={{ flexShrink: 0 }}>
             <Group justify="space-between">
               <Group gap="xs">
-                <ShoppingCart size={20} className="text-blue-600" />
-                <Text fw={800} size="md" className="text-blue-800">Giỏ hàng</Text>
-                <Badge size="sm" color="blue" variant="filled">{cartCount}</Badge>
+                <ShoppingCart size={20} className="text-brand" />
+                <Text fw={800} size="md" className="text-brand">Giỏ hàng</Text>
+                <Badge size="sm" color="brand" variant="filled">{cartCount}</Badge>
               </Group>
               {cart.length > 0 && (
                 <Button
@@ -391,15 +391,15 @@ export default function POSPage() {
                         )}
                         <Stack gap={0} style={{ minWidth: 0 }}>
                           <Text size="sm" fw={700} lineClamp={1}>{item.product_name}</Text>
-                          <Text size="xs" c="blue" fw={600}>{VND(item.unit_price)}</Text>
+                          <Text size="xs" c="brand" fw={600}>{VND(item.unit_price)}</Text>
                         </Stack>
                       </Group>
                       <Group gap={4} wrap="nowrap">
-                        <ActionIcon size="sm" variant="light" color="blue" radius="md" onClick={() => updateQty(item.product_id, -1)}>
+                        <ActionIcon size="sm" variant="light" color="brand" radius="md" onClick={() => updateQty(item.product_id, -1)}>
                           <Minus size={12} />
                         </ActionIcon>
                         <Text fw={800} w={24} ta="center" size="sm">{item.quantity}</Text>
-                        <ActionIcon size="sm" variant="light" color="blue" radius="md" onClick={() => updateQty(item.product_id, 1)}>
+                        <ActionIcon size="sm" variant="light" color="brand" radius="md" onClick={() => updateQty(item.product_id, 1)}>
                           <Plus size={12} />
                         </ActionIcon>
                         <ActionIcon size="sm" variant="subtle" color="red" radius="md" onClick={() => removeFromCart(item.product_id)}>
@@ -431,7 +431,7 @@ export default function POSPage() {
                     { label: 'Mang đi', value: 'take-away' },
                   ]}
                   radius="md"
-                  color="blue"
+                  color="brand"
                 />
               </Stack>
 
@@ -451,7 +451,7 @@ export default function POSPage() {
                   onChange={setTableId}
                   radius="md"
                   size="sm"
-                  rightSection={tablesLoading ? <Loader size={14} color="blue" /> : null}
+                  rightSection={tablesLoading ? <Loader size={14} color="brand" /> : null}
                   error={orderType === 'dine-in' && !tableId && cart.length > 0 ? 'Vui lòng chọn bàn' : null}
                 />
               )}
@@ -495,7 +495,7 @@ export default function POSPage() {
               {/* Total */}
               <Group justify="space-between">
                 <Text fw={700} c="dimmed">Tổng cộng</Text>
-                <Text fw={900} size="xl" c="blue">{VND(cartTotal)}</Text>
+                <Text fw={900} size="xl" c="brand">{VND(cartTotal)}</Text>
               </Group>
 
               {/* Confirm Button */}
@@ -503,9 +503,8 @@ export default function POSPage() {
                 fullWidth
                 size="md"
                 radius="md"
-                color="blue"
-                variant="gradient"
-                gradient={{ from: 'blue', to: 'cyan' }}
+                color="brand"
+                variant="filled"
                 leftSection={<CheckCircle2 size={18} />}
                 disabled={cart.length === 0 || (orderType === 'dine-in' && !tableId)}
                 onClick={() => setPaymentModalOpen(true)}
@@ -531,7 +530,7 @@ export default function POSPage() {
         onClose={() => setPaymentModalOpen(false)} 
         title={
           <Group gap="xs">
-            <ThemeIcon size={32} radius="md" variant="light" color="blue">
+            <ThemeIcon size={32} radius="md" variant="light" color="brand">
               <CreditCard size={18} />
             </ThemeIcon>
             <Text fw={900} size="lg" className="text-slate-800">Thanh Toán Đơn Hàng</Text>
@@ -546,10 +545,10 @@ export default function POSPage() {
       >
         <Stack gap="xl" mt="sm">
           {/* Total Amount Box */}
-          <Paper p="md" radius="md" bg="blue.0" className="border border-blue-100">
+          <Paper p="md" radius="md" bg="brand-soft" className="border border-brand-soft">
             <Stack gap={4} align="center">
-              <Text c="blue.7" fw={600} size="sm">Số tiền cần thu</Text>
-              <Text fw={900} size="36px" c="blue.9" style={{ lineHeight: 1 }}>{VND(cartTotal)}</Text>
+              <Text c="brand" fw={600} size="sm">Số tiền cần thu</Text>
+              <Text fw={900} size="36px" c="brand" style={{ lineHeight: 1 }}>{VND(cartTotal)}</Text>
             </Stack>
           </Paper>
 
@@ -562,8 +561,8 @@ export default function POSPage() {
                 onClick={() => setSelectedPayment('cash')}
                 className={`p-4 rounded-xl border-2 transition-all ${
                   selectedPayment === 'cash' 
-                    ? 'border-blue-500 bg-blue-50 shadow-md shadow-blue-500/10' 
-                    : 'border-slate-200 hover:border-blue-200 bg-white hover:bg-slate-50'
+                    ? 'border-brand bg-brand-soft shadow-md' 
+                    : 'border-slate-200 hover:border-brand bg-white hover:bg-slate-50'
                 }`}
               >
                 <Stack align="center" gap="sm">
@@ -571,7 +570,7 @@ export default function POSPage() {
                     size={48} 
                     radius="xl" 
                     variant={selectedPayment === 'cash' ? 'filled' : 'light'} 
-                    color={selectedPayment === 'cash' ? 'blue' : 'gray'}
+                    color={selectedPayment === 'cash' ? 'brand' : 'gray'}
                   >
                     <Receipt size={24} />
                   </ThemeIcon>
@@ -586,8 +585,8 @@ export default function POSPage() {
                 onClick={() => setSelectedPayment('transfer')}
                 className={`p-4 rounded-xl border-2 transition-all ${
                   selectedPayment === 'transfer' 
-                    ? 'border-blue-500 bg-blue-50 shadow-md shadow-blue-500/10' 
-                    : 'border-slate-200 hover:border-blue-200 bg-white hover:bg-slate-50'
+                    ? 'border-brand bg-brand-soft shadow-md' 
+                    : 'border-slate-200 hover:border-brand bg-white hover:bg-slate-50'
                 }`}
               >
                 <Stack align="center" gap="sm">
@@ -595,7 +594,7 @@ export default function POSPage() {
                     size={48} 
                     radius="xl" 
                     variant={selectedPayment === 'transfer' ? 'filled' : 'light'} 
-                    color={selectedPayment === 'transfer' ? 'blue' : 'gray'}
+                    color={selectedPayment === 'transfer' ? 'brand' : 'gray'}
                   >
                     <CreditCard size={24} />
                   </ThemeIcon>
@@ -622,7 +621,7 @@ export default function POSPage() {
               size="lg"
               radius="md"
               loading={createOrder.isPending} 
-              color="blue"
+              color="brand"
               onClick={() => createOrder.mutate()}
               leftSection={<CheckCircle2 size={20} />}
               className="shadow-lg shadow-blue-500/30"

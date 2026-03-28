@@ -22,8 +22,6 @@ export const useRealtime = () => {
   usePushSubscription('admin');
 
   useEffect(() => {
-    console.log('🏁 useRealtime Initialized');
-
     // 🔊 MẸO: Mở khóa âm thanh trình duyệt ngay khi Admin nhấn chuột lần đầu
     const unlockAudio = () => {
       const ctx = new (window.AudioContext || (window as any).webkitAudioContext)();
@@ -33,7 +31,6 @@ export const useRealtime = () => {
       const audio = new Audio();
       audio.play().catch(() => {});
       
-      console.log('🔓 Âm thanh đã được mở khóa!');
       notifications.hide('audio-blocked');
       window.removeEventListener('click', unlockAudio);
     };
@@ -53,7 +50,6 @@ export const useRealtime = () => {
             };
           })
           .catch(e => {
-            console.warn('🔔 Lỗi phát chuông:', e);
             if (e.name === 'NotAllowedError') {
               notifications.show({
                 id: 'audio-blocked',
@@ -88,8 +84,6 @@ export const useRealtime = () => {
     const channel = supabase
       .channel('admin_global_orders')
       .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'orders' }, async (payload) => {
-        console.log('📬 [REALTIME] NHẬN ĐƠN MỚI Payload:', payload);
-
         let tableName = 'khách mang đi';
         if (payload.new.table_id) {
           try {
@@ -102,7 +96,6 @@ export const useRealtime = () => {
           tableName = payload.new.table_name;
         }
 
-        console.log(`📣 Đang thông báo cho: ${tableName}`);
         playBell();
 
         notifications.show({
@@ -118,7 +111,6 @@ export const useRealtime = () => {
         queryClient.invalidateQueries({ queryKey: ['orders'] });
       })
       .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'orders' }, (payload) => {
-        console.log('📝 [REALTIME] CẬP NHẬT ĐƠN Payload:', payload);
         queryClient.invalidateQueries({ queryKey: ['orders'] });
 
         if (payload.new.order_status === 'paid' && payload.old.order_status !== 'paid') {
@@ -127,13 +119,7 @@ export const useRealtime = () => {
           notifications.show({ title: '💰 Thanh toán', message: `${table} đã thanh toán xong.`, color: 'green' });
         }
       })
-      .subscribe((status, err) => {
-        console.log('🔌 Supabase Realtime Status:', status);
-        if (err) console.error('❌ Lỗi kết nối Realtime:', err);
-        if (status === 'SUBSCRIBED') {
-          console.log('✅ Đã kết nối Realtime! Sẵn sàng nhận đơn.');
-        }
-      });
+      .subscribe();
 
     return () => {
       supabase.removeChannel(channel);

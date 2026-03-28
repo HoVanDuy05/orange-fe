@@ -12,6 +12,7 @@ import { DateInput } from '@mantine/dates';
 import { useDisclosure } from '@mantine/hooks';
 import { Plus, Trash2, Calendar, User, ShoppingCart, Edit, History, FileText, CheckCircle2, Package, Tag } from 'lucide-react';
 import { useRouter } from 'next/navigation';
+import Link from 'next/link';
 import { notifications } from '@mantine/notifications';
 import { modals } from '@mantine/modals';
 import { SectionLoader } from '@/components/common/GlobalLoading';
@@ -167,7 +168,7 @@ export default function StockPage() {
       render: (s) => (
         <Group gap={5} justify="center">
            <ActionIcon variant="light" color="blue" onClick={() => handleOpenEdit(s)} size="lg" radius="md"><Edit size={16} /></ActionIcon>
-           <ActionIcon variant="light" color="teal" onClick={() => router.push(`/stock/history/${s.id}`)} size="lg" radius="md"><History size={16} /></ActionIcon>
+           <ActionIcon variant="light" color="teal" component={Link} href={`/stock/history/${s.id}`} size="lg" radius="md"><History size={16} /></ActionIcon>
            <ActionIcon variant="light" color="red" size="lg" radius="md" onClick={() => modals.openConfirmModal({
               title: 'Xác nhận xoá phiếu',
               children: <Text size="sm">Hành động này sẽ gỡ bỏ số tiền {Number(s.cost).toLocaleString()} đ ra khỏi báo cáo. Xoá?</Text>,

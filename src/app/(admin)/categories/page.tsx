@@ -3,12 +3,19 @@
 import React, { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import https from '@/api/https';
-import { Title, Button, Table, Group, ActionIcon, Modal, TextInput, Textarea, Card, Center, Loader, Text } from '@mantine/core';
+import { 
+  Button, Table, Group, ActionIcon, Modal, TextInput, 
+  Textarea, Card, Text, Stack, Tooltip 
+} from '@mantine/core';
 import { useDisclosure } from '@mantine/hooks';
-import { Plus, Edit, Trash2 } from 'lucide-react';
+import { Plus, Edit, Trash2, FolderTree, RefreshCcw, Layers } from 'lucide-react';
 import { notifications } from '@mantine/notifications';
 import { modals } from '@mantine/modals';
 import { SectionLoader } from '@/components/common/GlobalLoading';
+
+// Reusable Components
+import { PageHeader } from '@/components/admin/ui/PageHeader';
+import { ServiceDataTable } from '@/components/admin/ui/ServiceDataTable';
 
 interface Category {
   id: number;
@@ -25,45 +32,33 @@ export default function CategoriesPage() {
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
 
-  const { data: rawCategories = [], isLoading } = useQuery({
+  const { data: rawCategories = [], isLoading, refetch, isRefetching } = useQuery({
     queryKey: ['categories'],
-    queryFn: async () => {
-      const res = await https.get('/categories');
-      return res.data;
-    }
+    queryFn: async () => (await https.get('/categories')).data?.data || []
   });
 
-  const categories = Array.isArray(rawCategories) ? rawCategories : (rawCategories?.data || []);
+  const categories: Category[] = rawCategories;
 
-  // Lưu (Thêm/Sửa)
   const saveMutation = useMutation({
     mutationFn: async (cat: Partial<Category>) => {
-      if (cat.id) {
-        return https.put(`/categories/${cat.id}`, cat);
-      }
+      if (cat.id) return https.put(`/categories/${cat.id}`, cat);
       return https.post('/categories', cat);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['categories'] });
-      notifications.show({ title: 'Thành công', message: 'Đã lưu danh mục!', color: 'green' });
+      notifications.show({ title: 'Thành công', message: 'Danh mục đã được lưu!', color: 'green' });
       handleClose();
     },
     onError: (error: any) => {
-      const msg = error.response?.data?.message || 'Không thể lưu danh mục.';
-      notifications.show({ title: 'Lỗi', message: msg, color: 'red' });
+      notifications.show({ title: 'Lỗi', message: error.response?.data?.message || 'Không thể lưu', color: 'red' });
     }
   });
 
-  // Xóa
   const deleteMutation = useMutation({
     mutationFn: async (id: number) => https.delete(`/categories/${id}`),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['categories'] });
-      notifications.show({ title: 'Đã xoá', message: 'Danh mục đã bị xoá.', color: 'blue' });
-    },
-    onError: (error: any) => {
-      const msg = error.response?.data?.message || 'Không thể xoá danh mục.';
-      notifications.show({ title: 'Lỗi', message: msg, color: 'red' });
+      notifications.show({ title: 'Đã xoá', message: 'Danh mục đã bị xoá.', color: 'orange' });
     }
   });
 
@@ -84,96 +79,110 @@ export default function CategoriesPage() {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!name.trim()) return;
-    saveMutation.mutate({
-      id: editingCategory?.id,
-      category_name: name,
-      description
-    });
+    saveMutation.mutate({ id: editingCategory?.id, category_name: name, description });
   };
 
-  if (isLoading) return <SectionLoader />;
+  const tableColumns = [
+    { key: 'id', label: 'ID', width: 80 },
+    { key: 'name', label: 'Tên danh mục', width: 240 },
+    { key: 'description', label: 'Mô tả chi tiết' },
+    { key: 'actions', label: 'Thao tác', width: 120 },
+  ];
+
+  if (isLoading && !isRefetching) return <SectionLoader />;
 
   return (
-    <div>
-      <Group justify="space-between" mb="lg">
-        <Title order={2} className="text-blue-900 border-b-2 border-blue-200 pb-2">
-          Quản lý Danh mục
-        </Title>
-        <Button
-          leftSection={<Plus size={16} />}
-          color="blue"
-          onClick={open}
-          className="shadow-sm"
-        >
-          Thêm Mới
-        </Button>
-      </Group>
+    <Stack gap="xl">
+      <PageHeader 
+        title="Quản lý Danh mục" 
+        description="Phân loại các nhóm sản phẩm để quản lý thực đơn hiệu quả hơn."
+        breadcrumbs={[{ label: 'Dashboard', href: '/' }, { label: 'Danh mục' }]}
+        actions={
+          <Group gap="sm">
+            <ActionIcon variant="light" color="brand" size="36px" radius="md" onClick={() => refetch()} loading={isRefetching}>
+              <RefreshCcw size={18} />
+            </ActionIcon>
+            <Button leftSection={<Plus size={18} />} color="brand" onClick={open} radius="md" fw={800}>
+               Thêm danh mục
+            </Button>
+          </Group>
+        }
+      />
 
-      <Card withBorder shadow="sm" radius="md" padding="0" className="bg-white border-blue-100 overflow-hidden">
-        <Table verticalSpacing="sm" striped>
-          <Table.Thead className="bg-slate-50">
-            <Table.Tr>
-              <Table.Th className="text-blue-800">ID</Table.Th>
-              <Table.Th className="text-blue-800">Tên Danh Mục</Table.Th>
-              <Table.Th className="text-blue-800">Mô Tả</Table.Th>
-              <Table.Th className="text-blue-800" w={100}>Thao Tác</Table.Th>
-            </Table.Tr>
-          </Table.Thead>
-          <Table.Tbody>
-            {categories.map((c: Category) => (
-              <Table.Tr key={c.id}>
-                <Table.Td fw={500}>{c.id}</Table.Td>
-                <Table.Td>{c.category_name}</Table.Td>
-                <Table.Td c="dimmed">{c.description || 'Không có mô tả'}</Table.Td>
-                <Table.Td>
-                  <Group gap={5}>
-                    <ActionIcon variant="subtle" color="blue" onClick={() => handleOpenEdit(c)}>
-                      <Edit size={16} />
-                    </ActionIcon>
-                    <ActionIcon
-                      variant="subtle"
-                      color="red"
-                      onClick={() => modals.openConfirmModal({
-                        title: 'Xác nhận xoá',
-                        children: (
-                          <Text size="sm">Bạn có chắc chắn muốn xoá danh mục "{c.category_name}"? Hành động này không thể hoàn tác.</Text>
-                        ),
-                        labels: { confirm: 'Xoá ngay', cancel: 'Hủy thao tác' },
-                        confirmProps: { color: 'red' },
-                        onConfirm: () => deleteMutation.mutate(c.id)
-                      })}
-                    >
-                      <Trash2 size={16} />
-                    </ActionIcon>
-                  </Group>
-                </Table.Td>
-              </Table.Tr>
-            ))}
-          </Table.Tbody>
-        </Table>
-      </Card>
+      <ServiceDataTable 
+        columns={tableColumns} 
+        data={categories}
+        isLoading={isLoading}
+        renderRow={(c) => (
+          <Table.Tr key={c.id}>
+            <Table.Td>
+              <Text fw={800} size="sm" c="dimmed">#{c.id}</Text>
+            </Table.Td>
+            <Table.Td>
+              <Group gap="sm">
+                <FolderTree size={16} color="var(--brand-primary)" />
+                <Text fw={700} style={{ color: '#1E293B' }}>{c.category_name}</Text>
+              </Group>
+            </Table.Td>
+            <Table.Td>
+              <Text size="sm" c="dimmed" fw={500} lineClamp={1}>
+                {c.description || 'Chưa có thông tin mô tả cho nhóm này.'}
+              </Text>
+            </Table.Td>
+            <Table.Td>
+              <Group gap="xs" justify="center">
+                <Tooltip label="Chỉnh sửa">
+                  <ActionIcon variant="light" color="blue" radius="md" onClick={() => handleOpenEdit(c)}>
+                    <Edit size={16} />
+                  </ActionIcon>
+                </Tooltip>
+                <Tooltip label="Xoá">
+                  <ActionIcon variant="light" color="red" radius="md" onClick={() => modals.openConfirmModal({
+                    title: 'Xoá danh mục',
+                    children: <Text size="sm">Bạn có chắc chắn muốn xoá danh mục {c.category_name}? Các sản phẩm thuộc danh mục này sẽ mất liên kết.</Text>,
+                    labels: { confirm: 'Xoá ngay', cancel: 'Huỷ' },
+                    confirmProps: { color: 'red' },
+                    onConfirm: () => deleteMutation.mutate(c.id)
+                  })}>
+                    <Trash2 size={16} />
+                  </ActionIcon>
+                </Tooltip>
+              </Group>
+            </Table.Td>
+          </Table.Tr>
+        )}
+      />
 
-      {/* Modal Thêm/Sửa */}
-      <Modal opened={opened} onClose={handleClose} title={<Text fw={700} size="lg">{editingCategory ? 'Sửa Danh Mục' : 'Thêm Danh Mục Mới'}</Text>}>
-        <form onSubmit={handleSubmit} className="flex flex-col gap-4">
-          <TextInput
-            label="Tên Danh Mục"
-            placeholder="Ví dụ: Đồ ăn, Thức uống,..."
-            required
-            value={name}
-            onChange={(e) => setName(e.currentTarget.value)}
-          />
-          <Textarea
-            label="Mô Tả"
-            placeholder="Điền mô tả thêm về danh mục này"
-            value={description}
-            onChange={(e) => setDescription(e.currentTarget.value)}
-          />
-          <Button fullWidth type="submit" loading={saveMutation.isPending} color="blue" mt="md">
-            Lưu Danh Mục
-          </Button>
+      <Modal opened={opened} onClose={handleClose} centered radius="24px" title={<Text fw={900} className="uppercase">{editingCategory ? 'Sửa danh mục' : 'Thêm danh mục mới'}</Text>}>
+        <form onSubmit={handleSubmit}>
+          <Stack gap="lg" p="md">
+            <TextInput
+              label="Tên danh mục"
+              placeholder="VD: Cà phê, Trà sữa, Bánh ngọt..."
+              required
+              autoFocus
+              value={name}
+              onChange={(e) => setName(e.currentTarget.value)}
+              radius="md"
+              leftSection={<Layers size={16} color="#94A3B8" />}
+            />
+            <Textarea
+              label="Mô tả"
+              placeholder="Điền ghi chú cho phân loại này..."
+              value={description}
+              onChange={(e) => setDescription(e.currentTarget.value)}
+              radius="md"
+              minRows={3}
+            />
+            <Group grow mt="md">
+               <Button variant="subtle" color="gray" onClick={handleClose} radius="xl" fw={700}>Bỏ qua</Button>
+               <Button type="submit" color="orange" radius="xl" fw={900} h={48} loading={saveMutation.isPending} className="shadow-lg shadow-orange-100">
+                  Lưu danh mục
+               </Button>
+            </Group>
+          </Stack>
         </form>
       </Modal>
-    </div>
+    </Stack>
   );
 }

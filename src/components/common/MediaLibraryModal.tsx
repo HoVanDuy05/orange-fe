@@ -1,63 +1,62 @@
 'use client';
 
-import React, { useState } from 'react';
-import { Modal, Text, Image, Button, Group, Box, Loader, Stack, ActionIcon, Center, SimpleGrid, Card, FileButton, Paper, ScrollArea, Divider } from '@mantine/core';
-import { Upload, X, Check, ImageIcon as IconImage, CheckCircle2, Calendar, Scissors, ExternalLink } from 'lucide-react';
+import { Text, Image, Button, Group, Box, Loader, Stack, ActionIcon, Center, SimpleGrid, Card, FileButton, Paper, ScrollArea, Divider, Tabs } from '@mantine/core';
+import { AppModal } from './AppModal';
+import { Upload, X, Check, ImageIcon as IconImage, CheckCircle2, Calendar, Scissors, ExternalLink, LayoutGrid, Package, Palette, UserCircle, Settings } from 'lucide-react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import https from '@/api/https';
 import { notifications } from '@mantine/notifications';
 import dayjs from 'dayjs';
+import { useState } from 'react';
+import { MediaGallery } from './MediaGallery';
 
 interface MediaLibraryModalProps {
   opened: boolean;
   onClose: () => void;
   onSelect: (url: string) => void;
   currentImageUrl?: string;
+  folder?: string; // Tên folder gợi ý (nếu có thì ẩn thanh Tab đi)
 }
 
-/**
- * Modal Thư viện Media (WordPress Style)
- * Có Sidebar xem trước và thông tin ảnh khi click chọn
- */
 export default function MediaLibraryModal({
   opened,
   onClose,
   onSelect,
-  currentImageUrl = ''
+  currentImageUrl = '',
+  folder = ''
 }: MediaLibraryModalProps) {
   const queryClient = useQueryClient();
   const [isUploading, setIsUploading] = useState(false);
   const [selectedUrl, setSelectedUrl] = useState<string | null>(currentImageUrl || null);
+  const [activeFolder, setActiveFolder] = useState<string>(folder || 'all');
 
-  // 1. Fetch Danh sách hình ảnh từ DB
-  const { data: rawData, isLoading } = useQuery({
-    queryKey: ['media-gallery'],
-    queryFn: async () => (await https.get('/media')).data,
+  // 1. Fetch Danh sách hình ảnh từ DB (Chỉ dùng lấy chi tiết ảnh đang chọn)
+  const { data: rawData } = useQuery({
+    queryKey: ['media-gallery', activeFolder],
+    queryFn: async () => (await https.get(`/media`, { params: { folder: activeFolder === 'all' ? undefined : activeFolder } })).data,
     enabled: opened
   });
 
   const gallery = Array.isArray(rawData) ? rawData : (rawData?.data || []);
-  
-  // Lấy chi tiết tấm ảnh đang chọn
   const selectedDetails = gallery.find((img: any) => img.url === selectedUrl);
 
-  // 2. Mutation Tải lên
   const uploadMutation = useMutation({
     mutationFn: async (file: File) => {
       const formData = new FormData();
       formData.append('image', file);
+      formData.append('folder', activeFolder || 'uncategorized');
       return https.post('/upload', formData, {
         headers: { 'Content-Type': 'multipart/form-data' },
       });
     },
     onSuccess: (res) => {
-      queryClient.invalidateQueries({ queryKey: ['media-gallery'] });
-      notifications.show({ title: 'Thành công', message: 'Đã tải ảnh lên thư viện', color: 'green' });
+      queryClient.invalidateQueries({ queryKey: ['media-gallery', activeFolder] });
+      notifications.show({ title: 'Thành công', message: `Đã cập nhật tệp tin mới nhất.`, color: 'green' });
       setIsUploading(false);
       setSelectedUrl(res.data.url);
     },
-    onError: (err: any) => {
-      notifications.show({ title: 'Lỗi', message: 'Không thể tải lên', color: 'red' });
+    onError: () => {
+      notifications.show({ title: 'Lỗi tải lên', message: 'Tệp không đúng định dạng hoặc quá lớn.', color: 'red' });
       setIsUploading(false);
     }
   });
@@ -77,156 +76,166 @@ export default function MediaLibraryModal({
   };
 
   return (
-    <Modal 
+    <AppModal 
       opened={opened} 
       onClose={onClose} 
-      title={<Text fw={900} size="xl" className="text-blue-800 uppercase">Thư viện Hình ảnh</Text>}
-      size="85vw" // Làm modal to ra để có không gian cho sidebar
-      radius="lg"
+      title="Lọc và Chọn tập tin"
+      subtitle="Quản lý và chọn tài nguyên hình ảnh toàn hệ thống"
+      size="88vw"
       centered
-      overlayProps={{ backgroundOpacity: 0.55, blur: 5 }}
-    >
-      <Stack gap="lg">
-        <Group justify="space-between">
-           <Text size="sm" c="dimmed">Chọn ảnh sẵn có từ thư viện hoặc tải lên tệp mới.</Text>
-           <FileButton onChange={handleUpload} accept="image/*">
-             {(props) => (
-                <Button 
-                  {...props} 
-                  variant="filled" 
-                  color="blue"
-                  leftSection={isUploading ? <Loader size={14} color="white" /> : <Upload size={16} />}
-                  loading={isUploading}
-                >
-                  Tải ảnh lên máy chủ
-                </Button>
-             )}
-           </FileButton>
-        </Group>
-
-        <SimpleGrid cols={{ base: 1, md: 4 }} spacing="xl">
-          {/* CỘT TRÁI: GRID HÌNH ẢNH (3/4 chiều rộng) */}
-          <Box style={{ gridColumn: 'span 3' }}>
-            <ScrollArea h={500} offsetScrollbars type="always">
-              {isLoading ? (
-                 <Center h={400}><Loader variant="bars" /></Center>
-              ) : gallery.length === 0 ? (
-                <Center h={400} className="bg-slate-50 rounded-2xl border-2 border-dashed border-slate-200">
-                   <Stack align="center" gap="sm">
-                      <IconImage size={48} className="text-slate-200" />
-                      <Text c="dimmed">Thư viện trống.</Text>
-                   </Stack>
-                </Center>
-              ) : (
-                 <SimpleGrid cols={{ base: 2, sm: 4, md: 5, lg: 6 }} spacing="md" p="xs">
-                    {gallery.map((img: any) => (
-                       <Card 
-                         key={img.id} 
-                         p="0" 
-                         radius="md" 
-                         withBorder 
-                         className={`cursor-pointer transition-all relative aspect-square group overflow-hidden ${selectedUrl === img.url ? 'ring-4 ring-blue-500 border-blue-500' : 'hover:border-blue-400'}`}
-                         onClick={() => setSelectedUrl(img.url)}
-                       >
-                         <Image src={img.url} alt="img" className="object-cover w-full h-full" />
-                         {selectedUrl === img.url && (
-                            <Box className="absolute top-1 right-1 bg-blue-500 rounded-full p-1 text-white shadow-xl z-10">
-                               <Check size={16} />
-                            </Box>
-                         )}
-                       </Card>
-                    ))}
-                 </SimpleGrid>
-              )}
-            </ScrollArea>
-          </Box>
-
-          {/* CỘT PHẢI: CHI TIẾT & PREVIEW (1/4 chiều rộng) */}
-          <Box className="bg-slate-50 rounded-2xl p-4 border border-slate-200 flex flex-col h-[500px]">
-             {selectedUrl ? (
-                <Stack gap="md" style={{ height: '100%' }}>
-                   <Text fw={800} size="sm" c="blue" tt="uppercase">Chi tiết tệp tin</Text>
-                   
-                   <Paper withBorder radius="md" p="xs" className="bg-white overflow-hidden shadow-sm">
-                      <Image src={selectedUrl} radius="sm" fit="contain" mah={180} />
-                   </Paper>
-
-                   <ScrollArea style={{ flex: 1 }}>
-                      <Stack gap="xs">
-                         <div className="bg-white p-2 rounded border border-slate-100">
-                            <Text size="xs" fw={700} c="dimmed" mb={2}>ĐƯỜNG DẪN ẢNH:</Text>
-                            <Paper p="xs" bg="slate.0" withBorder style={{ wordBreak: 'break-all' }}>
-                               <Text size="xs" className="font-mono" c="blue">{selectedUrl}</Text>
-                            </Paper>
-                         </div>
-
-                         {selectedDetails && (
-                            <Stack gap="xs" mt="sm">
-                               <Group gap="xs">
-                                  <Calendar size={14} className="text-slate-400" />
-                                  <Text size="xs" fw={600}>Ngày tải: {dayjs(selectedDetails.created_at).format('DD/MM/YYYY')}</Text>
-                               </Group>
-                               <Group gap="xs">
-                                  <Scissors size={14} className="text-slate-400" />
-                                  <Text size="xs" fw={600}>ID: {selectedDetails.public_id?.split('/')[1] || 'Tệp tải lên'}</Text>
-                               </Group>
-                            </Stack>
-                         )}
-                      </Stack>
-                   </ScrollArea>
-
-                   <Button 
-                      variant="light" 
-                      color="blue" 
-                      size="xs" 
-                      fullWidth 
-                      leftSection={<ExternalLink size={14} />}
-                      component="a"
-                      href={selectedUrl}
-                      target="_blank"
-                   >
-                      Mở tệp gốc
-                   </Button>
-                </Stack>
-             ) : (
-                <Center h="100%">
-                   <Stack align="center" gap="xs">
-                      <IconImage size={40} className="text-slate-300" />
-                      <Text size="xs" c="dimmed" ta="center">Chọn một hình ảnh để xem chi tiết.</Text>
-                   </Stack>
-                </Center>
-             )}
-          </Box>
-        </SimpleGrid>
-
-        <Divider />
-
-        {/* Thanh công cụ dưới cùng */}
-        <Group justify="space-between" p="sm" className="bg-blue-50/50 rounded-xl">
+      actions={
+        <Group justify="space-between" w="100%">
            <Box>
               {selectedUrl && (
                 <Group gap="sm">
-                   <CheckCircle2 size={18} className="text-blue-600" />
-                   <Text size="sm" fw={700} c="blue-9">Đã chọn 1 hình ảnh.</Text>
+                  <Box className="w-10 h-10 rounded-xl bg-brand-soft border border-brand-soft flex items-center justify-center shadow-sm">
+                     <CheckCircle2 size={20} className="text-brand" />
+                  </Box>
+                  <Stack gap={0}>
+                     <Text size="xs" fw={900} c="brand.9">Đã chọn 01 tập tin</Text>
+                     <Text size="10px" c="dimmed" fw={600}>Hệ thống đã sẵn sàng</Text>
+                  </Stack>
                 </Group>
               )}
            </Box>
-           <Group>
-              <Button variant="subtle" color="gray" onClick={onClose} size="md">Đóng lại</Button>
-              <Button 
-                variant="filled" 
-                color="blue" 
-                onClick={handleConfirmSelect} 
-                disabled={!selectedUrl}
-                size="md"
-                className="shadow-lg px-10"
-                radius="md"
-              >
-                Xác nhận chọn hình ảnh
-              </Button>
+           <Group gap="md">
+             <Button variant="subtle" color="gray" onClick={onClose} radius="md" size="md" fw={700}>Đóng lại</Button>
+             <Button 
+               variant="filled" 
+               color="brand" 
+               onClick={handleConfirmSelect} 
+               disabled={!selectedUrl}
+               radius="md"
+               size="md"
+               className="px-12 shadow-xl hover:shadow-2xl transition-all"
+               fw={800}
+             >
+               Xác nhận áp dụng
+             </Button>
            </Group>
         </Group>
-      </Stack>
-    </Modal>
+      }
+    >
+      <Box className="flex flex-col h-[70vh] -m-xl overflow-hidden">
+        {/* Header Actions - Chỉ hiện Tab nếu không có folder chỉ định */}
+        <Box p="md" className="border-b border-slate-100 bg-slate-50/20">
+          <Group justify="space-between" align="center">
+            {/* ẨN LOẠI (TAB) ĐI NẾU ĐÃ CỐ ĐỊNH FOLDER */}
+            {!folder ? (
+              <Tabs variant="pills" value={activeFolder} onChange={(v) => setActiveFolder(v || 'all')} radius="xl" color="brand">
+                <Tabs.List className="bg-white p-1 shadow-sm border border-slate-100 rounded-full">
+                  <Tabs.Tab value="all" leftSection={<LayoutGrid size={16} />} fw={700}>Tất cả</Tabs.Tab>
+                  <Tabs.Tab value="product" leftSection={<Package size={16} />} fw={700}>Sản phẩm</Tabs.Tab>
+                  <Tabs.Tab value="logo" leftSection={<Palette size={16} />} fw={700}>Thương hiệu</Tabs.Tab>
+                  <Tabs.Tab value="avatar" leftSection={<UserCircle size={16} />} fw={700}>Người dùng</Tabs.Tab>
+                  <Tabs.Tab value="uncategorized" leftSection={<Settings size={16} />} fw={700}>Khác</Tabs.Tab>
+                </Tabs.List>
+              </Tabs>
+            ) : (
+              <Group gap="xs">
+                 <Box className="w-1.5 h-6 bg-brand rounded-full" />
+                 <Text fw={900} size="xs" c="dimmed" tt="uppercase" style={{ letterSpacing: '1px' }}>Thư mục: {folder}</Text>
+              </Group>
+            )}
+
+            <FileButton onChange={handleUpload} accept="image/*">
+              {(props) => (
+                <Button 
+                  {...props} 
+                  variant="filled" 
+                  color="brand"
+                  radius="md"
+                  leftSection={isUploading ? <Loader size={14} color="white" /> : <Upload size={16} />}
+                  loading={isUploading}
+                  className="shadow-lg"
+                  size="sm"
+                >
+                  Thêm tệp mới
+                </Button>
+              )}
+            </FileButton>
+          </Group>
+        </Box>
+
+        <Box className="flex-1 overflow-hidden" bg="white">
+          <SimpleGrid cols={{ base: 1, md: 4 }} spacing="0" h="100%">
+            {/* GRID HÌNH ẢNH */}
+            <Box style={{ gridColumn: 'span 3' }} className="border-r border-slate-100 h-full bg-white">
+              <ScrollArea h="100%" p="xl" offsetScrollbars>
+                <MediaGallery 
+                  folder={activeFolder} 
+                  selectedUrl={selectedUrl} 
+                  onSelect={setSelectedUrl} 
+                />
+              </ScrollArea>
+            </Box>
+
+            {/* SIDEBAR PREVIEW */}
+            <Box className="bg-slate-50/10 p-6 flex flex-col h-full overflow-hidden shadow-inner">
+              {selectedUrl ? (
+                <Stack gap="xl" h="100%">
+                  <Box>
+                    <Text fw={900} size="xs" c="brand" tt="uppercase" mb="md" style={{ letterSpacing: '1px' }}>Xem trước tệp</Text>
+                    <Paper withBorder radius="xl" p={6} bg="white" styles={{ root: { borderColor: '#f1f5f9' } }} className="shadow-2xl overflow-hidden border-2 border-brand-soft">
+                      <Image src={selectedUrl} radius="lg" fit="contain" mah={240} className="hover:scale-105 transition-transform" />
+                    </Paper>
+                  </Box>
+
+                  <ScrollArea flex={1}>
+                    <Stack gap="lg">
+                      <Box>
+                        <Text size="10px" fw={800} c="dimmed" mb={8} tt="uppercase">ĐƯỜNG DẪN TRUY CẬP</Text>
+                        <Paper p="xs" radius="md" bg="white" withBorder styles={{ root: { borderColor: '#f1f5f9' } }} className="border-dashed border-slate-200">
+                          <Text size="xs" className="font-mono select-all leading-tight" c="brand.8" style={{ wordBreak: 'break-all' }}>{selectedUrl}</Text>
+                        </Paper>
+                      </Box>
+
+                      {selectedDetails && (
+                        <Box className="bg-white p-4 rounded-xl border border-slate-100 shadow-sm">
+                           <Stack gap="sm">
+                              <Group justify="space-between">
+                                 <Text size="10px" fw={800} c="dimmed">NGÀY ĐĂNG</Text>
+                                 <Text size="xs" fw={700}>{dayjs(selectedDetails.created_at).format('DD/MM/YYYY')}</Text>
+                              </Group>
+                              <Group justify="space-between">
+                                 <Text size="10px" fw={800} c="dimmed">TÊN GỐC</Text>
+                                 <Text size="xs" fw={700} truncate w={100}>{selectedDetails.public_id?.split('/')[1] || 'Media-File'}</Text>
+                              </Group>
+                           </Stack>
+                        </Box>
+                      )}
+                    </Stack>
+                  </ScrollArea>
+
+                  <Button 
+                    variant="light" 
+                    color="gray" 
+                    size="sm" 
+                    fullWidth 
+                    radius="md"
+                    leftSection={<ExternalLink size={14} />}
+                    component="a"
+                    href={selectedUrl}
+                    target="_blank"
+                    className="hover:bg-slate-200"
+                  >
+                    Mở tệp gốc
+                  </Button>
+                </Stack>
+              ) : (
+                <Center h="100%">
+                  <Stack align="center" gap="md">
+                    <Box p="lg" className="bg-slate-50 rounded-full border-2 border-dashed border-slate-100">
+                       <IconImage size={48} className="text-slate-300" />
+                    </Box>
+                    <Text size="xs" c="dimmed" ta="center" px="xl" fw={700} tt="uppercase" style={{ letterSpacing: '1px' }}>Nhấp chọn ảnh để xem chi tiết</Text>
+                  </Stack>
+                </Center>
+              )}
+            </Box>
+          </SimpleGrid>
+        </Box>
+      </Box>
+    </AppModal>
   );
 }

@@ -1,8 +1,11 @@
-export const formatCurrency = (amount: number) => {
+export const formatCurrency = (amount: number | string) => {
+  const val = Number(amount);
+  if (isNaN(val)) return '0 ₫';
   return new Intl.NumberFormat('vi-VN', {
     style: 'currency',
     currency: 'VND',
-  }).format(amount);
+    maximumFractionDigits: 0
+  }).format(val);
 };
 
 export const formatDate = (date: string | Date) => {

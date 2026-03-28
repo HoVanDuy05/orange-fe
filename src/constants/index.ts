@@ -14,4 +14,6 @@ export const COLORS = {
   PRIMARY: '#228be6',
   SECONDARY: '#15aabf',
   ERROR: '#fa5252',
+  BRAND_ORANGE: '#FF6B00',
+  BRAND_ORANGE_SOFT: 'rgba(255,107,0,0.08)',
 };

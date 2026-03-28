@@ -11,6 +11,7 @@ import { ModalsProvider } from '@mantine/modals';
 import QueryProvider from '@/providers/QueryProvider';
 
 import './globals.css';
+import { BrandThemeProvider } from '@/providers/BrandThemeProvider';
 
 const beVietnam = Be_Vietnam_Pro({
   subsets: ['vietnamese', 'latin'],
@@ -26,16 +27,6 @@ export const metadata: Metadata = {
   },
 };
 
-const theme = createTheme({
-  fontFamily: 'var(--font-be-vietnam), sans-serif',
-  headings: {
-    fontFamily: 'var(--font-be-vietnam), sans-serif',
-    fontWeight: '800',
-  },
-  primaryColor: 'blue',
-  defaultRadius: 'md',
-});
-
 export default function RootLayout({
   children,
 }: Readonly<{
@@ -49,12 +40,12 @@ export default function RootLayout({
       </head>
       <body suppressHydrationWarning>
         <QueryProvider>
-          <MantineProvider theme={theme} defaultColorScheme="light">
+          <BrandThemeProvider>
             <Notifications position="top-right" zIndex={2000} />
             <ModalsProvider>
               {children}
             </ModalsProvider>
-          </MantineProvider>
+          </BrandThemeProvider>
         </QueryProvider>
       </body>
     </html>
