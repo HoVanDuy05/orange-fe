@@ -21,7 +21,9 @@ export interface Category {
 export interface Table {
   id: number;
   table_name: string;
-  table_status: 'available' | 'occupied' | 'reserved';
+  table_status?: 'available' | 'occupied' | 'reserved';
+  is_occupied?: boolean;
+  active_order_count?: number;
   capacity?: number;
 }
 
@@ -43,6 +45,7 @@ export interface OrderItemPayload {
 }
 
 export interface OrderPayload {
+  order_type?: string;
   table_id: number | null;
   customer_name: string | null;
   customer_phone: string | null;

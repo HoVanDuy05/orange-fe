@@ -40,6 +40,9 @@ export function usePOS() {
     router.push(`${pathname}?${params.toString()}`);
   };
 
+  // Workflow state
+  const [step, setStep] = useState<'start' | 'table-grid' | 'ordering'>('start');
+
   // Cart
   const [cart, setCart] = useState<CartItem[]>([]);
 
@@ -53,6 +56,17 @@ export function usePOS() {
   // Payment UI
   const [paymentModalOpen, setPaymentModalOpen] = useState(false);
   const [selectedPayment, setSelectedPayment] = useState<PaymentMethod>('cash');
+
+  // Reset helper
+  const resetStore = () => {
+    setStep('start');
+    setCart([]);
+    setTableId(null);
+    setOrderType('dine-in');
+    setCustomerName('');
+    setCustomerPhone('');
+    setNote('');
+  };
 
   // Fetching categories
   const { data: categories = [], isLoading: catLoading } = useQuery<Category[]>({
@@ -192,8 +206,19 @@ export function usePOS() {
     },
   });
 
+  const cancelTableOrder = useMutation({
+    mutationFn: (orderId: number) => https.patch(`/orders/${orderId}/status`, { status: 'cancelled', cancel_reason: 'Hủy từ POS' }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['orders'] });
+      queryClient.invalidateQueries({ queryKey: ['tables'] });
+      notifications.show({ title: 'Đã hủy bàn', message: 'Đơn hàng hiện tại của bàn đã được hủy.', color: 'gray' });
+      resetStore();
+    }
+  });
+
   const handleConfirmOrder = () => {
     const payload: OrderPayload = {
+      order_type: orderType === 'dine-in' ? 'dine_in' : 'take_away',
       table_id: orderType === 'dine-in' ? (tableId ? Number(tableId) : null) : null,
       customer_name: customerName || null,
       customer_phone: customerPhone || null,
@@ -211,6 +236,7 @@ export function usePOS() {
 
   return {
     state: {
+      step,
       search, setSearch,
       filterCat, setFilterCat,
       page, totalPages, total,
@@ -227,14 +253,18 @@ export function usePOS() {
       paginatedProducts,
       tables, tablesLoading,
       filteredProducts,
-      isCreatingOrder: createOrder.isPending
+      isCreatingOrder: createOrder.isPending,
+      tableOrder
     },
     actions: {
+      setStep,
+      resetStore,
       addToCart,
       updateQty,
       removeFromCart,
       clearCart,
       handleConfirmOrder,
+      cancelTableOrder: cancelTableOrder.mutate,
       setPage
     }
   };
