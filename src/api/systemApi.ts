@@ -22,8 +22,8 @@ export const systemApi = {
 
   // Brands / Themes
   getBrandThemes: async (): Promise<BrandTheme[]> => {
-    const { data } = await https.get<BrandTheme[]>('/system/brands');
-    return data;
+    const { data } = await https.get<{ success: boolean; data: BrandTheme[] }>('/system/brands');
+    return data.data || [];
   },
   updateBrandTheme: async (id: number, theme: Partial<BrandTheme>) => {
     await https.put(`/system/brands/${id}`, theme);
