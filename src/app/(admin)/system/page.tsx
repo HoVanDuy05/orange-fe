@@ -22,13 +22,16 @@ export default function SystemPage() {
 
   if (isLoading) return <SectionLoader />;
 
+  // Ensure themes is always an array
+  const themeList = Array.isArray(themes) ? themes : [];
+
   // Group global settings from the first theme as source of truth
-  const mainTheme = themes[0] || { brand_name: 'Orange Cafe', logo_url: '', font_family: 'Be Vietnam Pro', id: 1 };
-  const adminTheme = themes.find(t => t.target_type === 'admin');
-  const clientTheme = themes.find(t => t.target_type === 'client');
+  const mainTheme = themeList[0] || { brand_name: 'Orange Cafe', logo_url: '', font_family: 'Be Vietnam Pro', id: 1 };
+  const adminTheme = themeList.find(t => t.target_type === 'admin');
+  const clientTheme = themeList.find(t => t.target_type === 'client');
 
   const handleGlobalUpdate = (data: any) => {
-    themes.forEach(t => updateTheme({ id: t.id, data }));
+    themeList.forEach(t => updateTheme({ id: t.id, data }));
   };
 
   return (
@@ -51,13 +54,13 @@ export default function SystemPage() {
               <Box>
                 <AppTitle level={4} mb={4}>Thông tin nhận diện chung</AppTitle>
                 <Text size="sm" c="dimmed" mb="lg">Logo, tên thương hiệu và font chữ dùng chung cho App & Admin.</Text>
-                
+
                 <Paper withBorder radius="xl" p="xl" bg="gray.0" style={{ borderStyle: 'dashed' }}>
                   <SimpleGrid cols={{ base: 1, sm: 2 }} spacing="xl">
                     <Stack gap="md">
-                      <TextInput 
-                        label="Tên thương hiệu" 
-                        defaultValue={mainTheme.brand_name} 
+                      <TextInput
+                        label="Tên thương hiệu"
+                        defaultValue={mainTheme.brand_name}
                         size="md" radius="md" fw={700}
                         onBlur={(e) => handleGlobalUpdate({ brand_name: e.target.value })}
                       />
@@ -65,26 +68,26 @@ export default function SystemPage() {
                         <Text size="sm" fw={800} mb={5}>Logo thương hiệu</Text>
                         <Group align="flex-end" gap="sm">
                           <Paper withBorder radius="md" p={10} bg="white" w={110} h={110} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                             <Image 
-                               src={mainTheme.logo_url || '/orange-logo.png'} 
-                               fit="contain" 
-                               mah="100%" 
-                             />
+                            <Image
+                              src={mainTheme.logo_url || '/orange-logo.png'}
+                              fit="contain"
+                              mah="100%"
+                            />
                           </Paper>
                           <Button variant="light" size="sm" onClick={() => setOpened(true)}>Thay đổi Logo</Button>
                         </Group>
-                        <MediaLibraryModal 
-                           opened={opened} 
-                           onClose={() => setOpened(false)} 
-                           folder="logo"
-                           onSelect={(url) => handleGlobalUpdate({ logo_url: url })}
-                           currentImageUrl={mainTheme.logo_url ?? undefined}
+                        <MediaLibraryModal
+                          opened={opened}
+                          onClose={() => setOpened(false)}
+                          folder="logo"
+                          onSelect={(url) => handleGlobalUpdate({ logo_url: url })}
+                          currentImageUrl={mainTheme.logo_url ?? undefined}
                         />
                       </Box>
                     </Stack>
 
                     <Stack gap="md">
-                      <Select 
+                      <Select
                         label="Font chữ hệ thống (Font Family)"
                         defaultValue={mainTheme.font_family || 'Be Vietnam Pro'}
                         data={[
@@ -106,48 +109,48 @@ export default function SystemPage() {
           </Tabs.Panel>
 
           <Tabs.Panel value="colors">
-             <AppTitle level={4} mb={4}>Tùy chỉnh màu sắc riêng biệt</AppTitle>
-             <Text size="sm" c="dimmed" mb="lg">Phân tách đặc trưng màu sắc cho khu vực Quản trị và ứng dụng Khách hàng.</Text>
+            <AppTitle level={4} mb={4}>Tùy chỉnh màu sắc riêng biệt</AppTitle>
+            <Text size="sm" c="dimmed" mb="lg">Phân tách đặc trưng màu sắc cho khu vực Quản trị và ứng dụng Khách hàng.</Text>
 
-             <SimpleGrid cols={{ base: 1, sm: 2 }} spacing="xl">
-                {/* Admin Theme */}
-                {adminTheme && (
-                  <Paper withBorder radius="xl" p="xl" style={{ borderLeft: `8px solid ${adminTheme.primary_color}` }}>
-                    <Text fw={900} size="sm" c="red.8" mb="lg" tt="uppercase">🔵 TRANG QUẢN TRỊ (ADMIN)</Text>
-                    <SimpleGrid cols={2} spacing="md">
-                       <ColorInput 
-                         label="Màu chủ đạo" 
-                         defaultValue={adminTheme.primary_color} 
-                         onChangeEnd={(v) => updateTheme({ id: adminTheme.id, data: { primary_color: v } })}
-                       />
-                       <ColorInput 
-                         label="Màu phụ" 
-                         defaultValue={adminTheme.secondary_color || ''} 
-                         onChangeEnd={(v) => updateTheme({ id: adminTheme.id, data: { secondary_color: v } })}
-                       />
-                    </SimpleGrid>
-                  </Paper>
-                )}
+            <SimpleGrid cols={{ base: 1, sm: 2 }} spacing="xl">
+              {/* Admin Theme */}
+              {adminTheme && (
+                <Paper withBorder radius="xl" p="xl" style={{ borderLeft: `8px solid ${adminTheme.primary_color}` }}>
+                  <Text fw={900} size="sm" c="red.8" mb="lg" tt="uppercase">🔵 TRANG QUẢN TRỊ (ADMIN)</Text>
+                  <SimpleGrid cols={2} spacing="md">
+                    <ColorInput
+                      label="Màu chủ đạo"
+                      defaultValue={adminTheme.primary_color}
+                      onChangeEnd={(v) => updateTheme({ id: adminTheme.id, data: { primary_color: v } })}
+                    />
+                    <ColorInput
+                      label="Màu phụ"
+                      defaultValue={adminTheme.secondary_color || ''}
+                      onChangeEnd={(v) => updateTheme({ id: adminTheme.id, data: { secondary_color: v } })}
+                    />
+                  </SimpleGrid>
+                </Paper>
+              )}
 
-                {/* Client Theme */}
-                {clientTheme && (
-                  <Paper withBorder radius="xl" p="xl" style={{ borderLeft: `8px solid ${clientTheme.primary_color}` }}>
-                    <Text fw={900} size="sm" c="green.8" mb="lg" tt="uppercase">🟢 ỨNG DỤNG KHÁCH HÀNG (CLIENT)</Text>
-                    <SimpleGrid cols={2} spacing="md">
-                       <ColorInput 
-                         label="Màu chủ đạo" 
-                         defaultValue={clientTheme.primary_color} 
-                         onChangeEnd={(v) => updateTheme({ id: clientTheme.id, data: { primary_color: v } })}
-                       />
-                       <ColorInput 
-                         label="Màu phụ" 
-                         defaultValue={clientTheme.secondary_color || ''} 
-                         onChangeEnd={(v) => updateTheme({ id: clientTheme.id, data: { secondary_color: v } })}
-                       />
-                    </SimpleGrid>
-                  </Paper>
-                )}
-             </SimpleGrid>
+              {/* Client Theme */}
+              {clientTheme && (
+                <Paper withBorder radius="xl" p="xl" style={{ borderLeft: `8px solid ${clientTheme.primary_color}` }}>
+                  <Text fw={900} size="sm" c="green.8" mb="lg" tt="uppercase">🟢 ỨNG DỤNG KHÁCH HÀNG (CLIENT)</Text>
+                  <SimpleGrid cols={2} spacing="md">
+                    <ColorInput
+                      label="Màu chủ đạo"
+                      defaultValue={clientTheme.primary_color}
+                      onChangeEnd={(v) => updateTheme({ id: clientTheme.id, data: { primary_color: v } })}
+                    />
+                    <ColorInput
+                      label="Màu phụ"
+                      defaultValue={clientTheme.secondary_color || ''}
+                      onChangeEnd={(v) => updateTheme({ id: clientTheme.id, data: { secondary_color: v } })}
+                    />
+                  </SimpleGrid>
+                </Paper>
+              )}
+            </SimpleGrid>
           </Tabs.Panel>
         </Tabs>
       </Card>
